@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic BOF Jet Penetration Simulator</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --panel-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --accent: #f39c12; 
+            --border: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        header {
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        header h1 { margin: 0; font-size: 24px; color: #ffffff; }
+        header p { margin: 0; font-size: 14px; color: #aaa; font-style: italic; }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 320px 350px 1fr;
+            gap: 20px;
+            flex-grow: 1;
+            min-height: 0;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .panel-title {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+        }
+
+        .control-group { margin-bottom: 20px; }
+        .control-group label {
+            display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #ccc;
+        }
+        .control-group input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+        .output-box {
+            background-color: #2a2a2a; padding: 15px; border-radius: 5px;
+            text-align: center; border: 1px dashed var(--accent); margin-bottom: 15px;
+        }
+        .output-box h2 { margin: 5px 0 0 0; font-size: 28px; color: #fff; }
+        .output-box span { font-size: 13px; color: #aaa; }
+
+        #d3-gauge {
+            background-color: #1a1a1a; border-radius: 5px; padding: 15px;
+            text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center;
+        }
+        .zone-label { font-size: 18px; font-weight: bold; margin-top: 15px; }
+
+        .canvas-container { flex-grow: 1; position: relative; min-height: 400px; }
+        canvas { width: 100%; height: 100%; display: block; background-color: #1a1a1a; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Dynamic BOF Jet Penetration Simulator</h1>
+            <p>Ref: Comparison of the Various Cavity Depth or Jet Penetration Index 
+Formulae for Blowing in a BOF with Bottom Stirring   (Breno Totti Maia) </p>
+        </div>
+        <p>Developed by <strong>Rangan Banerjee</strong></p>
+    </header>
+
+    <div class="dashboard">
+        <div class="panel">
+            <h2 class="panel-title">Operating Parameters</h2>
+            <div class="control-group">
+                <label><span>Oxygen Flow (V_O2)</span> <span id="val_VO2">857 Nm³/min</span></label>
+                <input type="range" id="inp_VO2" min="500" max="1200" step="1" value="857">
+            </div>
+            <div class="control-group">
+                <label><span>Lance Height (h_L)</span> <span id="val_hL">1800 mm</span></label>
+                <input type="range" id="inp_hL" min="1000" max="2500" step="10" value="1800">
+            </div>
+            <div class="control-group">
+                <label><span>Nozzles (n)</span> <span id="val_n">5</span></label>
+                <input type="range" id="inp_n" min="3" max="6" step="1" value="5">
+            </div>
+            <div class="control-group">
+                <label><span>Angle (θ)</span> <span id="val_theta">14°</span></label>
+                <input type="range" id="inp_theta" min="10" max="20" step="1" value="14">
+            </div>
+            <div class="control-group">
+                <label><span>Exit Dia (d_E)</span> <span id="val_dE">50 mm</span></label>
+                <input type="range" id="inp_dE" min="30" max="60" step="1" value="50">
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2 class="panel-title">Calculation Results</h2>
+            <div class="output-box">
+                <span>Absolute Penetration Depth (L)</span>
+                <h2 id="out_L">0 mm</h2>
+            </div>
+            <div class="output-box">
+                <span>Penetration Index (L / L₀)</span>
+                <h2 id="out_PI">0.00</h2>
+            </div>
+            <div id="d3-gauge">
+                <span style="color: #ccc; font-size: 13px; margin-bottom: 10px;">Blowing Phenomena Zones</span>
+                <div id="gauge-svg-container"></div>
+                <div id="active-zone-label" class="zone-label">Soft Blow</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2 class="panel-title">Real-Time BOF Cross-Section (L₀ = 1780 mm)</h2>
+            <div class="canvas-container">
+                <canvas id="bofCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const L_0 = 1780; 
+        const inputs = ['VO2', 'hL', 'n', 'theta', 'dE'];
+        const values = {};
+
+        function calculateMasazumi() {
+            inputs.forEach(id => { values[id] = parseFloat(document.getElementById(`inp_${id}`).value); });
+
+            document.getElementById('val_VO2').innerText = values.VO2 + ' Nm³/min';
+            document.getElementById('val_hL').innerText = values.hL + ' mm';
+            document.getElementById('val_n').innerText = values.n;
+            document.getElementById('val_theta').innerText = values.theta + '°';
+            document.getElementById('val_dE').innerText = values.dE + ' mm';
+
+            const kn = -0.063 * values.theta + 1.7577;
+            const d_m = values.dE / 1000; 
+            const flowTerm = (kn * values.VO2) / (values.n * d_m); 
+            const M = 63.0 * Math.pow(flowTerm, 2/3);
+            const L_raw = M * Math.exp((-0.78 * values.hL) / M);
+            const L = L_raw / 10; 
+            const PI = L / L_0;
+
+            document.getElementById('out_L').innerText = L.toFixed(0) + ' mm';
+            document.getElementById('out_PI').innerText = PI.toFixed(2);
+            return { L, PI };
+        }
+
+        function drawD3Gauge(PI) {
+            const container = d3.select("#gauge-svg-container");
+            container.selectAll("*").remove();
+
+            const width = document.getElementById('d3-gauge').clientWidth - 30;
+            const height = 80;
+            const margin = {top: 30, right: 10, bottom: 20, left: 10};
+
+            const svg = container.append("svg").attr("width", width).attr("height", height);
+            const xScale = d3.scaleLinear().domain([0, 1.1]).range([margin.left, width - margin.right]);
+
+            const zones = [
+                { limit: 0.40, color: "#3498db", name: "Soft Blow" },
+                { limit: 0.55, color: "#2ecc71", name: "Soft-Medium" },
+                { limit: 0.60, color: "#f1c40f", name: "Medium" },
+                { limit: 0.75, color: "#e67e22", name: "Medium-Hard" },
+                { limit: 1.10, color: "#e74c3c", name: "Hard Blow" }
+            ];
+
+            let previousLimit = 0;
+            let activeZoneName = "";
+            let activeColor = "";
+
+            zones.forEach(zone => {
+                svg.append("rect")
+                    .attr("x", xScale(previousLimit))
+                    .attr("y", margin.top)
+                    .attr("width", Math.max(0, xScale(zone.limit) - xScale(previousLimit)))
+                    .attr("height", 25).attr("fill", zone.color).attr("opacity", 0.7).attr("rx", 3);
+                
+                if (PI >= previousLimit && PI < zone.limit && activeZoneName === "") {
+                    activeZoneName = zone.name; activeColor = zone.color;
+                }
+                previousLimit = zone.limit;
+            });
+
+            if (PI >= 1.1) { activeZoneName = "Dangerous Over-Penetration"; activeColor = "#c0392b"; }
+
+            const clampedPI = Math.min(PI, 1.1);
+            const symbolGenerator = d3.symbol().type(d3.symbolTriangle).size(120);
+            
+            svg.append("path")
+                .attr("d", symbolGenerator)
+                .attr("transform", `translate(${xScale(clampedPI)}, ${margin.top - 8}) rotate(180)`)
+                .attr("fill", "#ffffff");
+
+            svg.append("text")
+                .attr("x", xScale(clampedPI)).attr("y", margin.top - 18)
+                .attr("text-anchor", "middle").attr("fill", "#ffffff")
+                .style("font-size", "14px").style("font-weight", "bold").text(PI.toFixed(2));
+
+            const labelEl = document.getElementById("active-zone-label");
+            labelEl.innerText = "Status: " + activeZoneName;
+            labelEl.style.color = activeColor;
+        }
+
+        function drawCanvas(L) {
+            const canvas = document.getElementById('bofCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const physicalHeight = 5000; 
+            const scale = canvas.height / physicalHeight;
+            const centerX = canvas.width / 2;
+
+            const bottomY = canvas.height - 20;
+            const bathLevelY = bottomY - (L_0 * scale);
+            const lanceTipY = bathLevelY - (values.hL * scale);
+            const p_px = L * scale;
+
+            const baseRadius = (values.hL * scale) * Math.tan(values.theta * (Math.PI / 180));
+            const cavityWidth = baseRadius * (1 + (values.n - 1) * 0.15);
+
+            // 1. Establish Converter Vessel Clipping Path
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(centerX - 160, -50);
+            ctx.lineTo(centerX - 160, bathLevelY - 50);
+            ctx.quadraticCurveTo(centerX - 160, bottomY, centerX - 80, bottomY);
+            ctx.lineTo(centerX + 80, bottomY);
+            ctx.quadraticCurveTo(centerX + 160, bottomY, centerX + 160, bathLevelY - 50);
+            ctx.lineTo(centerX + 160, -50);
+            ctx.clip(); // Restrict internal elements to the vessel shape
+
+            // 2. Draw Molten Steel Bath
+            ctx.fillStyle = '#e67e22'; 
+            ctx.beginPath();
+            ctx.moveTo(0, bottomY + 50); 
+            ctx.lineTo(0, bathLevelY);
+            ctx.lineTo(centerX - cavityWidth, bathLevelY);
+            ctx.quadraticCurveTo(centerX, bathLevelY + p_px * 1.8, centerX + cavityWidth, bathLevelY);
+            ctx.lineTo(canvas.width, bathLevelY);
+            ctx.lineTo(canvas.width, bottomY + 50);
+            ctx.closePath();
+            ctx.fill();
+
+            // 3. Draw Dynamic Slag Layer
+            ctx.strokeStyle = '#f1c40f'; // Slag Color
+            ctx.lineWidth = 14; // Slag Thickness
+            ctx.beginPath();
+            ctx.moveTo(0, bathLevelY);
+            ctx.lineTo(centerX - cavityWidth, bathLevelY);
+            ctx.quadraticCurveTo(centerX, bathLevelY + p_px * 1.8, centerX + cavityWidth, bathLevelY);
+            ctx.lineTo(canvas.width, bathLevelY);
+            ctx.stroke();
+
+            ctx.restore(); // Remove clipping mask
+
+            // 4. Draw Converter Vessel Shell (Outline)
+            ctx.strokeStyle = '#7f8c8d'; 
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(centerX - 160, -50);
+            ctx.lineTo(centerX - 160, bathLevelY - 50);
+            ctx.quadraticCurveTo(centerX - 160, bottomY, centerX - 80, bottomY);
+            ctx.lineTo(centerX + 80, bottomY);
+            ctx.quadraticCurveTo(centerX + 160, bottomY, centerX + 160, bathLevelY - 50);
+            ctx.lineTo(centerX + 160, -50);
+            ctx.stroke();
+
+            // 5. Draw Oxygen Lance
+            ctx.fillStyle = '#bdc3c7';
+            ctx.fillRect(centerX - 12, 0, 24, lanceTipY);
+            ctx.fillStyle = '#d35400';
+            ctx.beginPath();
+            ctx.moveTo(centerX - 18, lanceTipY);
+            ctx.lineTo(centerX + 18, lanceTipY);
+            ctx.lineTo(centerX + 12, lanceTipY - 20);
+            ctx.lineTo(centerX - 12, lanceTipY - 20);
+            ctx.fill();
+
+            // 6. Draw Oxygen Jet (Translucent)
+            ctx.fillStyle = 'rgba(135, 206, 235, 0.25)';
+            ctx.beginPath();
+            ctx.moveTo(centerX - 12, lanceTipY);
+            ctx.lineTo(centerX + 12, lanceTipY);
+            ctx.lineTo(centerX + cavityWidth * 0.8, bathLevelY + p_px * 0.5);
+            ctx.lineTo(centerX - cavityWidth * 0.8, bathLevelY + p_px * 0.5);
+            ctx.fill();
+
+            // 7. Labels
+            ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif';
+            
+            // hL Arrow
+            ctx.strokeStyle = '#fff'; ctx.beginPath();
+            ctx.moveTo(centerX - 60, lanceTipY); ctx.lineTo(centerX - 60, bathLevelY); ctx.stroke();
+            ctx.fillRect(centerX - 63, lanceTipY, 6, 2); ctx.fillRect(centerX - 63, bathLevelY, 6, 2);
+            ctx.textAlign = 'right'; ctx.fillText('h_L = ' + values.hL + 'mm', centerX - 70, bathLevelY - (values.hL * scale)/2);
+
+            // L Arrow
+            ctx.beginPath();
+            ctx.moveTo(centerX + 60, bathLevelY); ctx.lineTo(centerX + 60, Math.min(bathLevelY + p_px, bottomY - 5)); ctx.stroke();
+            ctx.fillRect(centerX + 57, bathLevelY, 6, 2); ctx.fillRect(centerX + 57, Math.min(bathLevelY + p_px, bottomY - 5), 6, 2);
+            ctx.textAlign = 'left'; ctx.fillText('L = ' + L.toFixed(0) + 'mm', centerX + 70, bathLevelY + p_px/2);
+            
+            ctx.fillStyle = '#ccc'; ctx.fillText('Static Bath (L₀): 1780mm', 10, bottomY - 10);
+        }
+
+        function updateAll() {
+            const results = calculateMasazumi();
+            drawD3Gauge(results.PI);
+            drawCanvas(results.L);
+        }
+
+        inputs.forEach(id => { document.getElementById(`inp_${id}`).addEventListener('input', updateAll); });
+        window.addEventListener('resize', updateAll);
+        updateAll();
+    </script>
+</body>
+</html>
