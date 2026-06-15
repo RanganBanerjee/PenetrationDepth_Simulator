@@ -1,42 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dynamic BOF Jet Penetration Simulator</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         :root {
-            --bg-dark: #121212;
-            --panel-bg: #1e1e1e;
-            --text-main: #e0e0e0;
-            --accent: #f39c12; 
-            --border: #333;
+            --bg-dark: #0d1117;
+            --panel-bg: #161b22;
+            --panel-soft: #0d1117;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent: #ff7b72;
+            --accent-blue: #58a6ff;
+            --border: #30363d;
+            --steel: #4b5563;
+            --refractory: #2d2622;
+            --slag-top: #fff3b0;
+            --slag-mid: #f1c40f;
+            --slag-low: #c9960b;
+            --metal-top: #ffae57;
+            --metal-mid: #e67e22;
+            --metal-low: #a8460f;
         }
 
+        * { box-sizing: border-box; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(88,166,255,0.08), transparent 30%),
+                linear-gradient(180deg, #0b0f14 0%, var(--bg-dark) 100%);
             color: var(--text-main);
             margin: 0;
             padding: 20px;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            box-sizing: border-box;
+            min-height: 100vh;
         }
 
         header {
-            border-bottom: 2px solid var(--accent);
-            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
+            gap: 20px;
         }
 
-        header h1 { margin: 0; font-size: 24px; color: #ffffff; }
-        header p { margin: 0; font-size: 14px; color: #aaa; font-style: italic; }
+        header h1 {
+            margin: 0;
+            font-size: 26px;
+            color: #ffffff;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        header p {
+            margin: 5px 0 0 0;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
 
         .dashboard {
             display: grid;
@@ -46,103 +72,215 @@
             min-height: 0;
         }
 
+        .controls-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
         .panel {
-            background-color: var(--panel-bg);
+            background: linear-gradient(180deg, rgba(22,27,34,0.98), rgba(13,17,23,0.98));
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 20px;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+        }
+
+        .panel-full {
             overflow-y: auto;
         }
 
         .panel-title {
             margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 18px;
-            color: var(--accent);
+            margin-bottom: 18px;
+            font-size: 16px;
+            color: #fff;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 5px;
+            padding-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .control-group { margin-bottom: 20px; }
-        .control-group label {
-            display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #ccc;
+        .control-group {
+            margin-bottom: 16px;
         }
-        .control-group input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 13px;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-blue);
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            outline: none;
+        }
 
         .output-box {
-            background-color: #2a2a2a; padding: 15px; border-radius: 5px;
-            text-align: center; border: 1px dashed var(--accent); margin-bottom: 15px;
+            background: linear-gradient(180deg, #11161d, #0b0f14);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--border);
+            margin-bottom: 15px;
         }
-        .output-box h2 { margin: 5px 0 0 0; font-size: 28px; color: #fff; }
-        .output-box span { font-size: 13px; color: #aaa; }
+
+        .output-box h2 {
+            margin: 5px 0 0 0;
+            font-size: 32px;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .output-box span {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
         #d3-gauge {
-            background-color: #1a1a1a; border-radius: 5px; padding: 15px;
-            text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center;
+            background-color: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px 15px;
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-        .zone-label { font-size: 18px; font-weight: bold; margin-top: 15px; }
 
-        .canvas-container { flex-grow: 1; position: relative; min-height: 400px; }
-        canvas { width: 100%; height: 100%; display: block; background-color: #1a1a1a; border-radius: 5px; }
+        .zone-label {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        .canvas-container {
+            flex-grow: 1;
+            position: relative;
+            min-height: 420px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background:
+                radial-gradient(circle at 50% 30%, rgba(255,255,255,0.04), transparent 45%),
+                linear-gradient(180deg, #05070a 0%, #010409 100%);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
-
     <header>
         <div>
-            <h1>Dynamic BOF Jet Penetration Simulator</h1>
-            <p>Ref: Comparison of the Various Cavity Depth or Jet Penetration Index 
-Formulae for Blowing in a BOF with Bottom Stirring   (Breno Totti Maia) </p>
+            <h1>BOF Jet Penetration Simulator</h1>
         </div>
-        <p>Developed by <strong>Rangan Banerjee</strong></p>
+        <div style="text-align: right;">
+            <p style="color: #fff; font-weight: 600; font-size: 14px;">Developed by Rangan Banerjee</p>
+        </div>
     </header>
 
     <div class="dashboard">
-        <div class="panel">
-            <h2 class="panel-title">Operating Parameters</h2>
-            <div class="control-group">
-                <label><span>Oxygen Flow (V_O2)</span> <span id="val_VO2">857 Nm³/min</span></label>
-                <input type="range" id="inp_VO2" min="500" max="1200" step="1" value="857">
+        <div class="controls-column">
+            <div class="panel">
+                <h2 class="panel-title" style="color: var(--accent-blue);">Lance Parameters</h2>
+                <div class="control-group">
+                    <label><span>Oxygen Flow (V_O2)</span> <span id="val_VO2">857 Nm³/min</span></label>
+                    <input type="range" id="inp_VO2" min="500" max="1200" step="1" value="857">
+                </div>
+                <div class="control-group">
+                    <label><span>Lance Height (h_L)</span> <span id="val_hL">1800 mm</span></label>
+                    <input type="range" id="inp_hL" min="1500" max="3500" step="10" value="1800">
+                </div>
+                <div class="control-group">
+                    <label><span>Nozzles (n)</span> <span id="val_n">5</span></label>
+                    <input type="range" id="inp_n" min="3" max="6" step="1" value="5">
+                </div>
+                <div class="control-group">
+                    <label><span>Angle (θ)</span> <span id="val_theta">14°</span></label>
+                    <input type="range" id="inp_theta" min="10" max="20" step="1" value="14">
+                </div>
+                <div class="control-group" style="margin-bottom: 0;">
+                    <label><span>Diameter (d)</span> <span id="val_dE">50 mm</span></label>
+                    <input type="range" id="inp_dE" min="30" max="45" step="1" value="50">
+                </div>
             </div>
-            <div class="control-group">
-                <label><span>Lance Height (h_L)</span> <span id="val_hL">1800 mm</span></label>
-                <input type="range" id="inp_hL" min="1000" max="2500" step="10" value="1800">
-            </div>
-            <div class="control-group">
-                <label><span>Nozzles (n)</span> <span id="val_n">5</span></label>
-                <input type="range" id="inp_n" min="3" max="6" step="1" value="5">
-            </div>
-            <div class="control-group">
-                <label><span>Angle (θ)</span> <span id="val_theta">14°</span></label>
-                <input type="range" id="inp_theta" min="10" max="20" step="1" value="14">
-            </div>
-            <div class="control-group">
-                <label><span>Exit Dia (d_E)</span> <span id="val_dE">50 mm</span></label>
-                <input type="range" id="inp_dE" min="30" max="60" step="1" value="50">
+
+            <div class="panel">
+                <h2 class="panel-title" style="color: var(--accent);">BOF Vessel Parameters</h2>
+                <div class="control-group">
+                    <label><span>Heat Size</span> <span id="val_heat">250 Tons</span></label>
+                    <input type="range" id="inp_heat" min="130" max="350" step="1" value="250">
+                </div>
+                
+                <div style="padding-top: 5px;">
+                    <h3 style="margin: 0 0 10px 0; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Converter Geometry</h3>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+                        <span style="color: var(--text-main);">Top Cone</span>
+                        <span id="val_topDia" style="color: #fff;">0 mm</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+                        <span style="color: var(--text-main);">Barrel</span>
+                        <span id="val_barrelDia" style="color: #fff;">0 mm</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                        <span style="color: var(--text-main);">Bottom Cone</span>
+                        <span id="val_bottomDia" style="color: #fff;">0 mm</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="panel">
+        <div class="panel panel-full">
             <h2 class="panel-title">Calculation Results</h2>
             <div class="output-box">
                 <span>Absolute Penetration Depth (L)</span>
                 <h2 id="out_L">0 mm</h2>
             </div>
             <div class="output-box">
+                <span>Static Bath Height</span>
+                <h2 id="out_L0">0 mm</h2>
+            </div>
+            <div class="output-box">
                 <span>Penetration Index (L / L₀)</span>
                 <h2 id="out_PI">0.00</h2>
             </div>
             <div id="d3-gauge">
-                <span style="color: #ccc; font-size: 13px; margin-bottom: 10px;">Blowing Phenomena Zones</span>
+                <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Blowing Phenomena Zones</span>
                 <div id="gauge-svg-container"></div>
                 <div id="active-zone-label" class="zone-label">Soft Blow</div>
             </div>
         </div>
 
-        <div class="panel">
-            <h2 class="panel-title">Real-Time BOF Cross-Section (L₀ = 1780 mm)</h2>
+        <div class="panel panel-full">
+            <h2 class="panel-title">Vessel Cross-Section Dynamics</h2>
             <div class="canvas-container">
                 <canvas id="bofCanvas"></canvas>
             </div>
@@ -150,39 +288,84 @@ Formulae for Blowing in a BOF with Bottom Stirring   (Breno Totti Maia) </p>
     </div>
 
     <script>
-        const L_0 = 1780; 
-        const inputs = ['VO2', 'hL', 'n', 'theta', 'dE'];
+        const inputs = ['VO2', 'hL', 'n', 'theta', 'dE', 'heat'];
         const values = {};
+        let frameCount = 0;
+
+        const bubbles = [];
+        for (let i = 0; i < 10; i++) {
+            bubbles.push({
+                xRatio: (Math.random() - 0.5) * 1.7,
+                phase: Math.random() * Math.PI * 2,
+                speed: 0.02 + Math.random() * 0.03,
+                size: 2 + Math.random() * 3
+            });
+        }
+
+        function interpolateHeat(value, points) {
+            if (value <= points[0][0]) return points[0][1];
+            if (value >= points[points.length - 1][0]) return points[points.length - 1][1];
+            for (let i = 0; i < points.length - 1; i++) {
+                const [x1, y1] = points[i];
+                const [x2, y2] = points[i + 1];
+                if (value >= x1 && value <= x2) {
+                    const t = (value - x1) / (x2 - x1);
+                    return y1 + t * (y2 - y1);
+                }
+            }
+            return points[0][1];
+        }
+
+        function getHeatGeometry(heat) {
+            const topDia = interpolateHeat(heat, [[130, 2300], [350, 4500]]);
+            const barrelDia = interpolateHeat(heat, [[130, 4000], [350, 7500]]);
+            const bottomDia = interpolateHeat(heat, [[130, 3000], [350, 6000]]);
+            return { topDia, barrelDia, bottomDia };
+        }
 
         function calculateMasazumi() {
-            inputs.forEach(id => { values[id] = parseFloat(document.getElementById(`inp_${id}`).value); });
+            inputs.forEach(id => {
+                values[id] = parseFloat(document.getElementById(`inp_${id}`).value);
+            });
+
+            const heat = values.heat;
+            const staticBathHeight = interpolateHeat(heat, [[130, 1500], [350, 2100]]);
+            values.L0 = staticBathHeight;
+
+            const { topDia, barrelDia, bottomDia } = getHeatGeometry(heat);
+            
+            document.getElementById('val_topDia').innerText = Math.round(topDia) + ' mm';
+            document.getElementById('val_barrelDia').innerText = Math.round(barrelDia) + ' mm';
+            document.getElementById('val_bottomDia').innerText = Math.round(bottomDia) + ' mm';
 
             document.getElementById('val_VO2').innerText = values.VO2 + ' Nm³/min';
             document.getElementById('val_hL').innerText = values.hL + ' mm';
             document.getElementById('val_n').innerText = values.n;
             document.getElementById('val_theta').innerText = values.theta + '°';
             document.getElementById('val_dE').innerText = values.dE + ' mm';
+            document.getElementById('val_heat').innerText = values.heat + ' Tons';
 
             const kn = -0.063 * values.theta + 1.7577;
-            const d_m = values.dE / 1000; 
-            const flowTerm = (kn * values.VO2) / (values.n * d_m); 
-            const M = 63.0 * Math.pow(flowTerm, 2/3);
+            const d_m = values.dE / 1000;
+            const flowTerm = (kn * values.VO2) / (values.n * d_m);
+            const M = 63.0 * Math.pow(flowTerm, 2 / 3);
             const L_raw = M * Math.exp((-0.78 * values.hL) / M);
-            const L = L_raw / 10; 
-            const PI = L / L_0;
+            const L = L_raw / 10;
+            const PI = L / values.L0;
 
             document.getElementById('out_L').innerText = L.toFixed(0) + ' mm';
+            document.getElementById('out_L0').innerText = values.L0.toFixed(0) + ' mm';
             document.getElementById('out_PI').innerText = PI.toFixed(2);
-            return { L, PI };
+            return { L, PI, L0: values.L0 };
         }
 
         function drawD3Gauge(PI) {
             const container = d3.select("#gauge-svg-container");
             container.selectAll("*").remove();
 
-            const width = document.getElementById('d3-gauge').clientWidth - 30;
-            const height = 80;
-            const margin = {top: 30, right: 10, bottom: 20, left: 10};
+            const width = Math.max(260, document.getElementById('d3-gauge').clientWidth - 30);
+            const height = 70;
+            const margin = { top: 20, right: 10, bottom: 20, left: 10 };
 
             const svg = container.append("svg").attr("width", width).attr("height", height);
             const xScale = d3.scaleLinear().domain([0, 1.1]).range([margin.left, width - margin.right]);
@@ -204,136 +387,276 @@ Formulae for Blowing in a BOF with Bottom Stirring   (Breno Totti Maia) </p>
                     .attr("x", xScale(previousLimit))
                     .attr("y", margin.top)
                     .attr("width", Math.max(0, xScale(zone.limit) - xScale(previousLimit)))
-                    .attr("height", 25).attr("fill", zone.color).attr("opacity", 0.7).attr("rx", 3);
-                
+                    .attr("height", 20)
+                    .attr("fill", zone.color)
+                    .attr("opacity", 0.85)
+                    .attr("rx", 2);
+
                 if (PI >= previousLimit && PI < zone.limit && activeZoneName === "") {
-                    activeZoneName = zone.name; activeColor = zone.color;
+                    activeZoneName = zone.name;
+                    activeColor = zone.color;
                 }
                 previousLimit = zone.limit;
             });
 
-            if (PI >= 1.1) { activeZoneName = "Dangerous Over-Penetration"; activeColor = "#c0392b"; }
+            if (PI >= 1.1) {
+                activeZoneName = "Dangerous Furnace Damage";
+                activeColor = "#ff4d4d";
+            }
 
             const clampedPI = Math.min(PI, 1.1);
-            const symbolGenerator = d3.symbol().type(d3.symbolTriangle).size(120);
-            
+            const symbolGenerator = d3.symbol().type(d3.symbolTriangle).size(110);
+
             svg.append("path")
                 .attr("d", symbolGenerator)
-                .attr("transform", `translate(${xScale(clampedPI)}, ${margin.top - 8}) rotate(180)`)
+                .attr("transform", `translate(${xScale(clampedPI)}, ${margin.top - 5}) rotate(180)`)
                 .attr("fill", "#ffffff");
 
             svg.append("text")
-                .attr("x", xScale(clampedPI)).attr("y", margin.top - 18)
-                .attr("text-anchor", "middle").attr("fill", "#ffffff")
-                .style("font-size", "14px").style("font-weight", "bold").text(PI.toFixed(2));
+                .attr("x", xScale(clampedPI))
+                .attr("y", margin.top - 12)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#ffffff")
+                .style("font-size", "12px")
+                .style("font-weight", "bold")
+                .text(PI.toFixed(2));
 
             const labelEl = document.getElementById("active-zone-label");
-            labelEl.innerText = "Status: " + activeZoneName;
-            labelEl.style.color = activeColor;
+            labelEl.innerText = activeZoneName || "Soft Blow";
+            labelEl.style.color = activeColor || "#3498db";
         }
 
         function drawCanvas(L) {
             const canvas = document.getElementById('bofCanvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
 
-            const physicalHeight = 5000; 
-            const scale = canvas.height / physicalHeight;
-            const centerX = canvas.width / 2;
+            canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+            canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, rect.width, rect.height);
 
-            const bottomY = canvas.height - 20;
-            const bathLevelY = bottomY - (L_0 * scale);
-            const lanceTipY = bathLevelY - (values.hL * scale);
+            const w = rect.width;
+            const h = rect.height;
+            const centerX = w / 2;
+            const heat = values.heat;
+            const { topDia, barrelDia, bottomDia } = getHeatGeometry(heat);
+
+            const scale = h / 8500;
+            const topHalf = (topDia / 2) * scale;
+            const barrelHalf = (barrelDia / 2) * scale;
+            const bottomHalf = (bottomDia / 2) * scale;
+
+            const coneHeight = 1200 * scale;
+            const barrelHeight = 4300 * scale;
+            const bottomHeight = 1500 * scale;
+            const totalVesselHeight = coneHeight + barrelHeight + bottomHeight;
+            const vesselTopY = Math.max(20, h * 0.08);
+            const topY = vesselTopY;
+            const coneBottomY = topY + coneHeight;
+            const barrelBottomY = coneBottomY + barrelHeight;
+            const bottomY = barrelBottomY + bottomHeight;
+            const vesselBottomY = Math.min(h - 40 * scale, bottomY);
+            const adjustedBottomY = vesselBottomY;
+            const adjustedBarrelBottomY = adjustedBottomY - bottomHeight;
+            const adjustedConeBottomY = adjustedBarrelBottomY - barrelHeight;
+            const vesselCenterY = topY + totalVesselHeight / 2;
+
+            const refractoryThickness = 120 * scale;
+            const innerTopHalf = Math.max(20 * scale, topHalf - refractoryThickness);
+            const innerBarrelHalf = Math.max(20 * scale, barrelHalf - refractoryThickness);
+            const innerBottomHalf = Math.max(20 * scale, bottomHalf - refractoryThickness);
+
+            const bathDepth = interpolateHeat(heat, [[130, 1500], [350, 2100]]);
+            const bathTopY = adjustedBottomY - bathDepth * scale * 0.95;
+            const bathTopClamped = Math.max(adjustedConeBottomY + 40 * scale, Math.min(adjustedBottomY - 120 * scale, bathTopY));
+            const metalSurfaceY = bathTopClamped + 42 * scale;
+            const lanceTipY = metalSurfaceY - (values.hL * scale);
             const p_px = L * scale;
 
             const baseRadius = (values.hL * scale) * Math.tan(values.theta * (Math.PI / 180));
-            const cavityWidth = baseRadius * (1 + (values.n - 1) * 0.15);
+            const cavityWidth = Math.max(24, baseRadius * (1 + (values.n - 1) * 0.15));
 
-            // 1. Establish Converter Vessel Clipping Path
+            function shellPath() {
+                ctx.beginPath();
+                ctx.moveTo(centerX - topHalf, topY);
+                ctx.lineTo(centerX - barrelHalf, coneBottomY);
+                ctx.lineTo(centerX - barrelHalf, barrelBottomY);
+                ctx.quadraticCurveTo(centerX - bottomHalf, adjustedBottomY - 18 * scale, centerX, adjustedBottomY);
+                ctx.quadraticCurveTo(centerX + bottomHalf, adjustedBottomY - 18 * scale, centerX + barrelHalf, barrelBottomY);
+                ctx.lineTo(centerX + barrelHalf, coneBottomY);
+                ctx.lineTo(centerX + topHalf, topY);
+                ctx.closePath();
+            }
+
+            function innerPath() {
+                ctx.beginPath();
+                ctx.moveTo(centerX - innerTopHalf, topY + refractoryThickness * 0.55);
+                ctx.lineTo(centerX - innerBarrelHalf, coneBottomY - refractoryThickness * 0.15);
+                ctx.lineTo(centerX - innerBarrelHalf, barrelBottomY - refractoryThickness * 0.15);
+                ctx.quadraticCurveTo(centerX - innerBottomHalf, adjustedBottomY - refractoryThickness * 0.15, centerX, adjustedBottomY - refractoryThickness * 0.05);
+                ctx.quadraticCurveTo(centerX + innerBottomHalf, adjustedBottomY - refractoryThickness * 0.15, centerX + innerBarrelHalf, barrelBottomY - refractoryThickness * 0.15);
+                ctx.lineTo(centerX + innerBarrelHalf, coneBottomY - refractoryThickness * 0.15);
+                ctx.lineTo(centerX + innerTopHalf, topY + refractoryThickness * 0.55);
+                ctx.closePath();
+            }
+
             ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(centerX - 160, -50);
-            ctx.lineTo(centerX - 160, bathLevelY - 50);
-            ctx.quadraticCurveTo(centerX - 160, bottomY, centerX - 80, bottomY);
-            ctx.lineTo(centerX + 80, bottomY);
-            ctx.quadraticCurveTo(centerX + 160, bottomY, centerX + 160, bathLevelY - 50);
-            ctx.lineTo(centerX + 160, -50);
-            ctx.clip(); // Restrict internal elements to the vessel shape
+            const bgGlow = ctx.createRadialGradient(centerX, vesselCenterY, 40 * scale, centerX, vesselCenterY, Math.max(w, h) * 0.6);
+            bgGlow.addColorStop(0, 'rgba(255,255,255,0.02)');
+            bgGlow.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = bgGlow;
+            ctx.fillRect(0, 0, w, h);
+            ctx.restore();
 
-            // 2. Draw Molten Steel Bath
-            ctx.fillStyle = '#e67e22'; 
+            ctx.save();
+            shellPath();
+            ctx.lineWidth = Math.max(2, 18 * scale);
+            ctx.strokeStyle = '#4b5563';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.save();
+            ctx.restore();
+
+            ctx.save();
+            shellPath();
+            ctx.fillStyle = '#2d2622';
+            ctx.fill();
+            ctx.clip();
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0,0,0,0.16)';
+            ctx.lineWidth = Math.max(1, 1.2 * scale);
+            for (let y = topY; y < adjustedBottomY; y += 180 * scale) {
+                ctx.beginPath();
+                ctx.moveTo(centerX - barrelHalf * 1.08, y);
+                ctx.lineTo(centerX + barrelHalf * 1.08, y);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            ctx.save();
+            innerPath();
+            ctx.clip();
+
+            const slagThickness = Math.max(16, 44 * scale);
+            const metalSurfaceClamp = Math.max(topY + 60 * scale, Math.min(adjustedBottomY - 120 * scale, metalSurfaceY));
+            const bathLevelY = metalSurfaceClamp - slagThickness;
+            const metalCavityWidth = cavityWidth;
+            const slagCavityWidth = cavityWidth * 1.18;
+
+            const steelGradient = ctx.createLinearGradient(0, metalSurfaceClamp, 0, adjustedBottomY);
+            steelGradient.addColorStop(0, '#ffb35e');
+            steelGradient.addColorStop(0.35, '#e67e22');
+            steelGradient.addColorStop(1, '#9f430f');
+            ctx.fillStyle = steelGradient;
             ctx.beginPath();
-            ctx.moveTo(0, bottomY + 50); 
-            ctx.lineTo(0, bathLevelY);
-            ctx.lineTo(centerX - cavityWidth, bathLevelY);
-            ctx.quadraticCurveTo(centerX, bathLevelY + p_px * 1.8, centerX + cavityWidth, bathLevelY);
-            ctx.lineTo(canvas.width, bathLevelY);
-            ctx.lineTo(canvas.width, bottomY + 50);
+            ctx.moveTo(0, adjustedBottomY + 60);
+            ctx.lineTo(0, metalSurfaceClamp);
+            ctx.lineTo(centerX - metalCavityWidth, metalSurfaceClamp);
+            ctx.quadraticCurveTo(centerX, metalSurfaceClamp + p_px * 1.65, centerX + metalCavityWidth, metalSurfaceClamp);
+            ctx.lineTo(w, metalSurfaceClamp);
+            ctx.lineTo(w, adjustedBottomY + 60);
             ctx.closePath();
             ctx.fill();
 
-            // 3. Draw Dynamic Slag Layer
-            ctx.strokeStyle = '#f1c40f'; // Slag Color
-            ctx.lineWidth = 14; // Slag Thickness
+            const slagGradient = ctx.createLinearGradient(0, bathLevelY, 0, metalSurfaceClamp);
+            slagGradient.addColorStop(0, '#fff3b0');
+            slagGradient.addColorStop(0.5, '#f1c40f');
+            slagGradient.addColorStop(1, '#b88309');
+            ctx.fillStyle = slagGradient;
             ctx.beginPath();
             ctx.moveTo(0, bathLevelY);
-            ctx.lineTo(centerX - cavityWidth, bathLevelY);
-            ctx.quadraticCurveTo(centerX, bathLevelY + p_px * 1.8, centerX + cavityWidth, bathLevelY);
-            ctx.lineTo(canvas.width, bathLevelY);
-            ctx.stroke();
+            ctx.lineTo(0, metalSurfaceClamp);
+            ctx.lineTo(centerX - metalCavityWidth, metalSurfaceClamp);
+            ctx.quadraticCurveTo(centerX, metalSurfaceClamp + p_px * 1.65, centerX + metalCavityWidth, metalSurfaceClamp);
+            ctx.lineTo(w, metalSurfaceClamp);
+            ctx.lineTo(w, bathLevelY);
+            ctx.lineTo(centerX + slagCavityWidth, bathLevelY);
+            ctx.quadraticCurveTo(centerX, bathLevelY + p_px * 0.55, centerX - slagCavityWidth, bathLevelY);
+            ctx.closePath();
+            ctx.fill();
 
-            ctx.restore(); // Remove clipping mask
-
-            // 4. Draw Converter Vessel Shell (Outline)
-            ctx.strokeStyle = '#7f8c8d'; 
-            ctx.lineWidth = 8;
+            ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+            ctx.lineWidth = Math.max(1, 2 * scale);
             ctx.beginPath();
-            ctx.moveTo(centerX - 160, -50);
-            ctx.lineTo(centerX - 160, bathLevelY - 50);
-            ctx.quadraticCurveTo(centerX - 160, bottomY, centerX - 80, bottomY);
-            ctx.lineTo(centerX + 80, bottomY);
-            ctx.quadraticCurveTo(centerX + 160, bottomY, centerX + 160, bathLevelY - 50);
-            ctx.lineTo(centerX + 160, -50);
+            ctx.moveTo(0, bathLevelY);
+            ctx.lineTo(centerX - slagCavityWidth, bathLevelY);
+            ctx.quadraticCurveTo(centerX, bathLevelY + p_px * 0.55, centerX + slagCavityWidth, bathLevelY);
+            ctx.lineTo(w, bathLevelY);
             ctx.stroke();
 
-            // 5. Draw Oxygen Lance
-            ctx.fillStyle = '#bdc3c7';
-            ctx.fillRect(centerX - 12, 0, 24, lanceTipY);
+            const glow = ctx.createRadialGradient(centerX, metalSurfaceClamp + p_px * 0.55, 10, centerX, metalSurfaceClamp + p_px * 0.55, Math.max(100, cavityWidth * 1.1));
+            glow.addColorStop(0, 'rgba(255,180,90,0.22)');
+            glow.addColorStop(1, 'rgba(255,180,90,0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(centerX, metalSurfaceClamp + p_px * 0.55, Math.max(100, cavityWidth * 1.1), 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+            ctx.restore();
+
+            ctx.save();
+            shellPath();
+            ctx.clip();
+            innerPath();
+            ctx.strokeStyle = '#3b3029';
+            ctx.lineWidth = Math.max(8, refractoryThickness);
+            ctx.stroke();
+            ctx.restore();
+
+            const lanceWidth = 480 * scale;
+            const innerPipe = 190 * scale;
+            const tipTop = lanceTipY - (290 * scale);
+
+            ctx.fillStyle = '#8b949e';
+            ctx.fillRect(centerX - lanceWidth / 2, 0, lanceWidth, Math.max(0, lanceTipY - (290 * scale)));
+
+            ctx.fillStyle = '#c9d1d9';
+            ctx.fillRect(centerX - innerPipe / 2, 0, innerPipe, Math.max(0, lanceTipY - (290 * scale)));
+
             ctx.fillStyle = '#d35400';
             ctx.beginPath();
-            ctx.moveTo(centerX - 18, lanceTipY);
-            ctx.lineTo(centerX + 18, lanceTipY);
-            ctx.lineTo(centerX + 12, lanceTipY - 20);
-            ctx.lineTo(centerX - 12, lanceTipY - 20);
+            ctx.moveTo(centerX - lanceWidth / 2, tipTop);
+            ctx.lineTo(centerX + lanceWidth / 2, tipTop);
+            ctx.lineTo(centerX + lanceWidth / 3, lanceTipY);
+            ctx.lineTo(centerX - lanceWidth / 3, lanceTipY);
+            ctx.closePath();
             ctx.fill();
 
-            // 6. Draw Oxygen Jet (Translucent)
-            ctx.fillStyle = 'rgba(135, 206, 235, 0.25)';
+            const jetGradient = ctx.createLinearGradient(0, lanceTipY, 0, metalSurfaceClamp + p_px * 0.45);
+            jetGradient.addColorStop(0, 'rgba(88, 166, 255, 0.38)');
+            jetGradient.addColorStop(1, 'rgba(255, 220, 150, 0.20)');
+            ctx.fillStyle = jetGradient;
             ctx.beginPath();
-            ctx.moveTo(centerX - 12, lanceTipY);
-            ctx.lineTo(centerX + 12, lanceTipY);
-            ctx.lineTo(centerX + cavityWidth * 0.8, bathLevelY + p_px * 0.5);
-            ctx.lineTo(centerX - cavityWidth * 0.8, bathLevelY + p_px * 0.5);
+            ctx.moveTo(centerX - lanceWidth / 4, lanceTipY);
+            ctx.lineTo(centerX + lanceWidth / 4, lanceTipY);
+            ctx.lineTo(centerX + cavityWidth * 0.86, metalSurfaceClamp + p_px * 0.45);
+            ctx.lineTo(centerX - cavityWidth * 0.86, metalSurfaceClamp + p_px * 0.45);
+            ctx.closePath();
             ctx.fill();
 
-            // 7. Labels
-            ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif';
-            
-            // hL Arrow
-            ctx.strokeStyle = '#fff'; ctx.beginPath();
-            ctx.moveTo(centerX - 60, lanceTipY); ctx.lineTo(centerX - 60, bathLevelY); ctx.stroke();
-            ctx.fillRect(centerX - 63, lanceTipY, 6, 2); ctx.fillRect(centerX - 63, bathLevelY, 6, 2);
-            ctx.textAlign = 'right'; ctx.fillText('h_L = ' + values.hL + 'mm', centerX - 70, bathLevelY - (values.hL * scale)/2);
+            ctx.save();
+            for (let i = 0; i < 2; i++) {
+                const wx = centerX + (i === 0 ? -0.35 : 0.35) * topHalf;
+                const wy = topY - (18 + i * 14) * scale;
+                const r = (38 + i * 12) * scale;
+                const drift = Math.sin(frameCount * 0.015 + i * 1.8) * 10 * scale;
+                const grad = ctx.createRadialGradient(wx + drift, wy, 0, wx + drift, wy, r);
+                grad.addColorStop(0, 'rgba(180,180,190,0.10)');
+                grad.addColorStop(1, 'rgba(180,180,190,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(wx + drift, wy, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
 
-            // L Arrow
-            ctx.beginPath();
-            ctx.moveTo(centerX + 60, bathLevelY); ctx.lineTo(centerX + 60, Math.min(bathLevelY + p_px, bottomY - 5)); ctx.stroke();
-            ctx.fillRect(centerX + 57, bathLevelY, 6, 2); ctx.fillRect(centerX + 57, Math.min(bathLevelY + p_px, bottomY - 5), 6, 2);
-            ctx.textAlign = 'left'; ctx.fillText('L = ' + L.toFixed(0) + 'mm', centerX + 70, bathLevelY + p_px/2);
-            
-            ctx.fillStyle = '#ccc'; ctx.fillText('Static Bath (L₀): 1780mm', 10, bottomY - 10);
+            frameCount++;
         }
 
         function updateAll() {
@@ -342,8 +665,17 @@ Formulae for Blowing in a BOF with Bottom Stirring   (Breno Totti Maia) </p>
             drawCanvas(results.L);
         }
 
-        inputs.forEach(id => { document.getElementById(`inp_${id}`).addEventListener('input', updateAll); });
+        inputs.forEach(id => {
+            document.getElementById(`inp_${id}`).addEventListener('input', updateAll);
+        });
+
         window.addEventListener('resize', updateAll);
+
+        setInterval(() => {
+            const results = calculateMasazumi();
+            drawCanvas(results.L);
+        }, 120);
+
         updateAll();
     </script>
 </body>
