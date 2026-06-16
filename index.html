@@ -213,11 +213,11 @@
                 <h2 class="panel-title" style="color: var(--accent-blue);">Lance Parameters</h2>
                 <div class="control-group">
                     <label><span>Oxygen Flow (V_O2)</span> <span id="val_VO2">857 Nm³/min</span></label>
-                    <input type="range" id="inp_VO2" min="500" max="1200" step="1" value="857">
+                    <input type="range" id="inp_VO2" min="250" max="1200" step="1" value="500">
                 </div>
                 <div class="control-group">
-                    <label><span>Lance Height (h_L)</span> <span id="val_hL">1800 mm</span></label>
-                    <input type="range" id="inp_hL" min="1500" max="3500" step="10" value="1800">
+                    <label><span>Lance Height (h_L)</span> <span id="val_hL">1.8 m</span></label>
+                    <input type="range" id="inp_hL" min="1.5" max="3.5" step="0.01" value="1.8">
                 </div>
                 <div class="control-group">
                     <label><span>Nozzles (n)</span> <span id="val_n">5</span></label>
@@ -228,8 +228,8 @@
                     <input type="range" id="inp_theta" min="10" max="20" step="1" value="14">
                 </div>
                 <div class="control-group" style="margin-bottom: 0;">
-                    <label><span>Diameter (d)</span> <span id="val_dE">50 mm</span></label>
-                    <input type="range" id="inp_dE" min="30" max="45" step="1" value="50">
+                    <label><span> Nozzle Throat Diameter (d)</span> <span id="val_dE">40 mm</span></label>
+                    <input type="range" id="inp_dE" min="30" max="45" step="1" value="40">
                 </div>
             </div>
 
@@ -317,9 +317,9 @@
         }
 
         function getHeatGeometry(heat) {
-            const topDia = interpolateHeat(heat, [[130, 2300], [350, 4500]]);
-            const barrelDia = interpolateHeat(heat, [[130, 4000], [350, 7500]]);
-            const bottomDia = interpolateHeat(heat, [[130, 3000], [350, 6000]]);
+            const topDia = interpolateHeat(heat, [[130, 2566], [350, 4260]]);
+            const barrelDia = interpolateHeat(heat, [[130, 4870], [350, 7100]]);
+            const bottomDia = interpolateHeat(heat, [[130, 3500], [350, 5660]]);
             return { topDia, barrelDia, bottomDia };
         }
 
@@ -334,12 +334,17 @@
 
             const { topDia, barrelDia, bottomDia } = getHeatGeometry(heat);
             
-            document.getElementById('val_topDia').innerText = Math.round(topDia) + ' mm';
-            document.getElementById('val_barrelDia').innerText = Math.round(barrelDia) + ' mm';
-            document.getElementById('val_bottomDia').innerText = Math.round(bottomDia) + ' mm';
+            document.getElementById('val_topDia').innerText =
+                (topDia / 1000).toFixed(2) + ' m';
+
+            document.getElementById('val_barrelDia').innerText =
+                 (barrelDia / 1000).toFixed(2) + ' m';
+
+            document.getElementById('val_bottomDia').innerText =
+                (bottomDia / 1000).toFixed(2) + ' m';
 
             document.getElementById('val_VO2').innerText = values.VO2 + ' Nm³/min';
-            document.getElementById('val_hL').innerText = values.hL + ' mm';
+            document.getElementById('val_hL').innerText = values.hL.toFixed(2) + ' m';
             document.getElementById('val_n').innerText = values.n;
             document.getElementById('val_theta').innerText = values.theta + '°';
             document.getElementById('val_dE').innerText = values.dE + ' mm';
@@ -349,7 +354,7 @@
             const d_m = values.dE / 1000;
             const flowTerm = (kn * values.VO2) / (values.n * d_m);
             const M = 63.0 * Math.pow(flowTerm, 2 / 3);
-            const L_raw = M * Math.exp((-0.78 * values.hL) / M);
+            const L_raw = M * Math.exp((-0.78 * values.hL * 1000) / M);
             const L = L_raw / 10;
             const PI = L / values.L0;
 
@@ -472,10 +477,10 @@
             const bathTopY = adjustedBottomY - bathDepth * scale * 0.95;
             const bathTopClamped = Math.max(adjustedConeBottomY + 40 * scale, Math.min(adjustedBottomY - 120 * scale, bathTopY));
             const metalSurfaceY = bathTopClamped + 42 * scale;
-            const lanceTipY = metalSurfaceY - (values.hL * scale);
+            const lanceTipY = metalSurfaceY - (values.hL * 1000 * scale);
             const p_px = L * scale;
 
-            const baseRadius = (values.hL * scale) * Math.tan(values.theta * (Math.PI / 180));
+            const baseRadius = (values.hL * 1000 * scale) * Math.tan(values.theta * (Math.PI / 180));
             const cavityWidth = Math.max(24, baseRadius * (1 + (values.n - 1) * 0.15));
 
             function shellPath() {
