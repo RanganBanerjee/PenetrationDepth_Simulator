@@ -213,11 +213,11 @@
                 <h2 class="panel-title" style="color: var(--accent-blue);">Lance Parameters</h2>
                 <div class="control-group">
                     <label><span>Oxygen Flow (V_O2)</span> <span id="val_VO2">857 Nm³/min</span></label>
-                    <input type="range" id="inp_VO2" min="250" max="1200" step="1" value="500">
+                    <input type="range" id="inp_VO2" min="250" max="1200" step="5" value="500">
                 </div>
                 <div class="control-group">
                     <label><span>Lance Height (h_L)</span> <span id="val_hL">1.8 m</span></label>
-                    <input type="range" id="inp_hL" min="1.5" max="3.5" step="0.01" value="1.8">
+                    <input type="range" id="inp_hL" min="1.5" max="3.5" step="0.05" value="1.8">
                 </div>
                 <div class="control-group">
                     <label><span>Nozzles (n)</span> <span id="val_n">5</span></label>
@@ -261,13 +261,41 @@
         <div class="panel panel-full">
             <h2 class="panel-title">Calculation Results</h2>
             <div class="output-box">
-                <span>Absolute Penetration Depth (L)</span>
+                <span>Penetration Depth (L)</span>
                 <h2 id="out_L">0 mm</h2>
             </div>
-            <div class="output-box">
-                <span>Static Bath Height</span>
-                <h2 id="out_L0">0 mm</h2>
-            </div>
+            
+            <div class="output-box"
+     style="display:flex;
+            justify-content:space-evenly;
+            align-items:center;
+            padding:12px 8px;">
+
+    <div style="text-align:center; flex:1;">
+        <span style="font-size:11px;">Bath Height (L₀)</span>
+        <h2 id="out_L0"
+            style="font-size:24px; margin-top:6px;">
+            0 mm
+        </h2>
+    </div>
+
+    <div style="
+        width:1px;
+        height:48px;
+        background:#30363d;
+        opacity:0.8;">
+    </div>
+
+    <div style="text-align:center; flex:1;">
+        <span style="font-size:11px;">Steel Height</span>
+        <h2 id="out_steel"
+            style="font-size:24px; margin-top:6px;">
+            0 mm
+        </h2>
+    </div>
+
+</div>
+            
             <div class="output-box">
                 <span>Penetration Index (L / L₀)</span>
                 <h2 id="out_PI">0.00</h2>
@@ -280,7 +308,7 @@
         </div>
 
         <div class="panel panel-full">
-            <h2 class="panel-title">Vessel Cross-Section Dynamics</h2>
+            <h2 class="panel-title">BOF Cross-Section Visualization</h2>
             <div class="canvas-container">
                 <canvas id="bofCanvas"></canvas>
             </div>
@@ -329,19 +357,29 @@
             });
 
             const heat = values.heat;
-            const staticBathHeight = interpolateHeat(heat, [[130, 1500], [350, 2100]]);
-            values.L0 = staticBathHeight;
+            const refractoryThicknessMM =
+                interpolateHeat(heat, [
+                    [130,1000],
+                    [350,1350]
+                ]);
 
+            const metalBathHeight =
+                interpolateHeat(heat, [
+                    [130,1500],
+                    [350,2100]
+            ]);
+
+            const staticBathHeight = refractoryThicknessMM + metalBathHeight;
+
+            values.refractoryThickness = refractoryThicknessMM;
+            values.metalBathHeight = metalBathHeight;
+            values.L0 = staticBathHeight;
+            
             const { topDia, barrelDia, bottomDia } = getHeatGeometry(heat);
             
-            document.getElementById('val_topDia').innerText =
-                (topDia / 1000).toFixed(2) + ' m';
-
-            document.getElementById('val_barrelDia').innerText =
-                 (barrelDia / 1000).toFixed(2) + ' m';
-
-            document.getElementById('val_bottomDia').innerText =
-                (bottomDia / 1000).toFixed(2) + ' m';
+            document.getElementById('val_topDia').innerText = (topDia / 1000).toFixed(2) + ' m';
+            document.getElementById('val_barrelDia').innerText = (barrelDia / 1000).toFixed(2) + ' m';
+            document.getElementById('val_bottomDia').innerText = (bottomDia / 1000).toFixed(2) + ' m';
 
             document.getElementById('val_VO2').innerText = values.VO2 + ' Nm³/min';
             document.getElementById('val_hL').innerText = values.hL.toFixed(2) + ' m';
@@ -351,16 +389,18 @@
             document.getElementById('val_heat').innerText = values.heat + ' Tons';
 
             const kn = -0.063 * values.theta + 1.7577;
-            const d_m = values.dE / 1000;
-            const flowTerm = (kn * values.VO2) / (values.n * d_m);
+            const d_m = values.dE;
+            const flowTerm = (kn * values.VO2 * 60) / (values.n * d_m);
             const M = 63.0 * Math.pow(flowTerm, 2 / 3);
             const L_raw = M * Math.exp((-0.78 * values.hL * 1000) / M);
-            const L = L_raw / 10;
+            const L = L_raw ;
             const PI = L / values.L0;
 
             document.getElementById('out_L').innerText = L.toFixed(0) + ' mm';
             document.getElementById('out_L0').innerText = values.L0.toFixed(0) + ' mm';
+            document.getElementById('out_steel').innerText = values.metalBathHeight.toFixed(0) + ' mm';
             document.getElementById('out_PI').innerText = PI.toFixed(2);
+            
             return { L, PI, L0: values.L0 };
         }
 
@@ -463,50 +503,48 @@
             const barrelBottomY = coneBottomY + barrelHeight;
             const bottomY = barrelBottomY + bottomHeight;
             const vesselBottomY = Math.min(h - 40 * scale, bottomY);
+            
             const adjustedBottomY = vesselBottomY;
-            const adjustedBarrelBottomY = adjustedBottomY - bottomHeight;
-            const adjustedConeBottomY = adjustedBarrelBottomY - barrelHeight;
             const vesselCenterY = topY + totalVesselHeight / 2;
 
-            const refractoryThickness = 120 * scale;
-            const innerTopHalf = Math.max(20 * scale, topHalf - refractoryThickness);
-            const innerBarrelHalf = Math.max(20 * scale, barrelHalf - refractoryThickness);
-            const innerBottomHalf = Math.max(20 * scale, bottomHalf - refractoryThickness);
+            const refractoryThickness = values.refractoryThickness * scale;
+            
+            const innerBottomY = adjustedBottomY - refractoryThickness;
 
-            const bathDepth = interpolateHeat(heat, [[130, 1500], [350, 2100]]);
-            const bathTopY = adjustedBottomY - bathDepth * scale * 0.95;
-            const bathTopClamped = Math.max(adjustedConeBottomY + 40 * scale, Math.min(adjustedBottomY - 120 * scale, bathTopY));
-            const metalSurfaceY = bathTopClamped + 42 * scale;
-            const lanceTipY = metalSurfaceY - (values.hL * 1000 * scale);
+            const metalSurfaceY = innerBottomY - (values.metalBathHeight * scale);
+            const metalSurfaceClamp = Math.max(topY + 60 * scale, Math.min(innerBottomY - 20 * scale, metalSurfaceY));
+            
+            const lanceTipY = metalSurfaceClamp - (values.hL * 1000 * scale);
             const p_px = L * scale;
 
             const baseRadius = (values.hL * 1000 * scale) * Math.tan(values.theta * (Math.PI / 180));
-            const cavityWidth = Math.max(24, baseRadius * (1 + (values.n - 1) * 0.15));
+            const throatFactor = values.dE / 40;
 
-            function shellPath() {
-                ctx.beginPath();
-                ctx.moveTo(centerX - topHalf, topY);
-                ctx.lineTo(centerX - barrelHalf, coneBottomY);
-                ctx.lineTo(centerX - barrelHalf, barrelBottomY);
-                ctx.quadraticCurveTo(centerX - bottomHalf, adjustedBottomY - 18 * scale, centerX, adjustedBottomY);
-                ctx.quadraticCurveTo(centerX + bottomHalf, adjustedBottomY - 18 * scale, centerX + barrelHalf, barrelBottomY);
-                ctx.lineTo(centerX + barrelHalf, coneBottomY);
-                ctx.lineTo(centerX + topHalf, topY);
+            const cavityWidth = Math.max(
+            24,
+            baseRadius *
+            throatFactor *
+            (1 + (values.n - 1) * 0.15)
+            );
+
+            function addVesselPath(offset) {
+                const tH = Math.max(0, topHalf - offset);
+                const brH = Math.max(0, barrelHalf - offset);
+                const btH = Math.max(0, bottomHalf - offset);
+                const bY = adjustedBottomY - offset;
+
+                ctx.moveTo(centerX - tH, topY);
+                ctx.lineTo(centerX - brH, coneBottomY);
+                ctx.lineTo(centerX - brH, barrelBottomY);
+                // Apply a smooth tangent-continuous Bézier sweep across bottom left and right knuckles
+                ctx.bezierCurveTo(centerX - brH, barrelBottomY + (bY - barrelBottomY) * 0.75, centerX - btH, bY, centerX, bY);
+                ctx.bezierCurveTo(centerX + btH, bY, centerX + brH, barrelBottomY + (bY - barrelBottomY) * 0.75, centerX + brH, barrelBottomY);
+                ctx.lineTo(centerX + brH, coneBottomY);
+                ctx.lineTo(centerX + tH, topY);
                 ctx.closePath();
             }
 
-            function innerPath() {
-                ctx.beginPath();
-                ctx.moveTo(centerX - innerTopHalf, topY + refractoryThickness * 0.55);
-                ctx.lineTo(centerX - innerBarrelHalf, coneBottomY - refractoryThickness * 0.15);
-                ctx.lineTo(centerX - innerBarrelHalf, barrelBottomY - refractoryThickness * 0.15);
-                ctx.quadraticCurveTo(centerX - innerBottomHalf, adjustedBottomY - refractoryThickness * 0.15, centerX, adjustedBottomY - refractoryThickness * 0.05);
-                ctx.quadraticCurveTo(centerX + innerBottomHalf, adjustedBottomY - refractoryThickness * 0.15, centerX + innerBarrelHalf, barrelBottomY - refractoryThickness * 0.15);
-                ctx.lineTo(centerX + innerBarrelHalf, coneBottomY - refractoryThickness * 0.15);
-                ctx.lineTo(centerX + innerTopHalf, topY + refractoryThickness * 0.55);
-                ctx.closePath();
-            }
-
+            // Background Glow
             ctx.save();
             const bgGlow = ctx.createRadialGradient(centerX, vesselCenterY, 40 * scale, centerX, vesselCenterY, Math.max(w, h) * 0.6);
             bgGlow.addColorStop(0, 'rgba(255,255,255,0.02)');
@@ -515,105 +553,78 @@
             ctx.fillRect(0, 0, w, h);
             ctx.restore();
 
-            ctx.save();
-            shellPath();
-            ctx.lineWidth = Math.max(2, 18 * scale);
-            ctx.strokeStyle = '#4b5563';
-            ctx.lineJoin = 'round';
-            ctx.stroke();
-            ctx.restore();
+            // Safety Lining (Outer 15%)
+            ctx.beginPath();
+            addVesselPath(0);
+            addVesselPath(refractoryThickness * 0.15);
+            ctx.fillStyle = '#3c322d'; 
+            ctx.fill('evenodd');
 
-            ctx.save();
-            ctx.restore();
+            // Working Lining (Inner 85%)
+            ctx.beginPath();
+            addVesselPath(refractoryThickness * 0.15);
+            addVesselPath(refractoryThickness);
+            ctx.fillStyle = '#2d2622'; 
+            ctx.fill('evenodd');
 
+            // Refractory Brick Texture Lines
             ctx.save();
-            shellPath();
-            ctx.fillStyle = '#2d2622';
-            ctx.fill();
-            ctx.clip();
-
-            ctx.save();
-            ctx.strokeStyle = 'rgba(0,0,0,0.16)';
+            ctx.beginPath();
+            addVesselPath(0);
+            addVesselPath(refractoryThickness);
+            ctx.clip('evenodd');
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
             ctx.lineWidth = Math.max(1, 1.2 * scale);
             for (let y = topY; y < adjustedBottomY; y += 180 * scale) {
                 ctx.beginPath();
-                ctx.moveTo(centerX - barrelHalf * 1.08, y);
-                ctx.lineTo(centerX + barrelHalf * 1.08, y);
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
                 ctx.stroke();
             }
             ctx.restore();
 
+            // Steel Shell (Outer Edge)
+            ctx.beginPath();
+            addVesselPath(0);
+            ctx.lineWidth = Math.max(2, 18 * scale);
+            ctx.strokeStyle = '#4b5563';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            // Molten Metal and Cavity
             ctx.save();
-            innerPath();
-            ctx.clip();
+            ctx.beginPath();
+            addVesselPath(refractoryThickness);
+            ctx.clip(); // Restricts drawing to ONLY the space inside the perfectly smooth refractory curve
 
-            const slagThickness = Math.max(16, 44 * scale);
-            const metalSurfaceClamp = Math.max(topY + 60 * scale, Math.min(adjustedBottomY - 120 * scale, metalSurfaceY));
-            const bathLevelY = metalSurfaceClamp - slagThickness;
-            const metalCavityWidth = cavityWidth;
-            const slagCavityWidth = cavityWidth * 1.18;
-
-            const steelGradient = ctx.createLinearGradient(0, metalSurfaceClamp, 0, adjustedBottomY);
+            const steelGradient = ctx.createLinearGradient(0, metalSurfaceClamp, 0, innerBottomY);
             steelGradient.addColorStop(0, '#ffb35e');
             steelGradient.addColorStop(0.35, '#e67e22');
             steelGradient.addColorStop(1, '#9f430f');
             ctx.fillStyle = steelGradient;
+
             ctx.beginPath();
-            ctx.moveTo(0, adjustedBottomY + 60);
+            ctx.moveTo(0, innerBottomY + 60); // Start safely below the smooth floor
             ctx.lineTo(0, metalSurfaceClamp);
-            ctx.lineTo(centerX - metalCavityWidth, metalSurfaceClamp);
-            ctx.quadraticCurveTo(centerX, metalSurfaceClamp + p_px * 1.65, centerX + metalCavityWidth, metalSurfaceClamp);
+            ctx.lineTo(centerX - cavityWidth, metalSurfaceClamp);
+            ctx.quadraticCurveTo(centerX, metalSurfaceClamp + p_px * 1.55, centerX + cavityWidth, metalSurfaceClamp);
             ctx.lineTo(w, metalSurfaceClamp);
-            ctx.lineTo(w, adjustedBottomY + 60);
+            ctx.lineTo(w, innerBottomY + 60); 
             ctx.closePath();
             ctx.fill();
 
-            const slagGradient = ctx.createLinearGradient(0, bathLevelY, 0, metalSurfaceClamp);
-            slagGradient.addColorStop(0, '#fff3b0');
-            slagGradient.addColorStop(0.5, '#f1c40f');
-            slagGradient.addColorStop(1, '#b88309');
-            ctx.fillStyle = slagGradient;
-            ctx.beginPath();
-            ctx.moveTo(0, bathLevelY);
-            ctx.lineTo(0, metalSurfaceClamp);
-            ctx.lineTo(centerX - metalCavityWidth, metalSurfaceClamp);
-            ctx.quadraticCurveTo(centerX, metalSurfaceClamp + p_px * 1.65, centerX + metalCavityWidth, metalSurfaceClamp);
-            ctx.lineTo(w, metalSurfaceClamp);
-            ctx.lineTo(w, bathLevelY);
-            ctx.lineTo(centerX + slagCavityWidth, bathLevelY);
-            ctx.quadraticCurveTo(centerX, bathLevelY + p_px * 0.55, centerX - slagCavityWidth, bathLevelY);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.strokeStyle = 'rgba(255,255,255,0.30)';
-            ctx.lineWidth = Math.max(1, 2 * scale);
-            ctx.beginPath();
-            ctx.moveTo(0, bathLevelY);
-            ctx.lineTo(centerX - slagCavityWidth, bathLevelY);
-            ctx.quadraticCurveTo(centerX, bathLevelY + p_px * 0.55, centerX + slagCavityWidth, bathLevelY);
-            ctx.lineTo(w, bathLevelY);
-            ctx.stroke();
-
+            // Impact Cavity Glow
             const glow = ctx.createRadialGradient(centerX, metalSurfaceClamp + p_px * 0.55, 10, centerX, metalSurfaceClamp + p_px * 0.55, Math.max(100, cavityWidth * 1.1));
             glow.addColorStop(0, 'rgba(255,180,90,0.22)');
             glow.addColorStop(1, 'rgba(255,180,90,0)');
             ctx.fillStyle = glow;
             ctx.beginPath();
-            ctx.arc(centerX, metalSurfaceClamp + p_px * 0.55, Math.max(100, cavityWidth * 1.1), 0, Math.PI * 2);
+            ctx.arc(centerX, metalSurfaceClamp + p_px * 0.55, Math.max(100, cavityWidth * 1.2), 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.restore();
-            ctx.restore();
+            ctx.restore(); 
 
-            ctx.save();
-            shellPath();
-            ctx.clip();
-            innerPath();
-            ctx.strokeStyle = '#3b3029';
-            ctx.lineWidth = Math.max(8, refractoryThickness);
-            ctx.stroke();
-            ctx.restore();
-
+            // Oxygen Lance
             const lanceWidth = 480 * scale;
             const innerPipe = 190 * scale;
             const tipTop = lanceTipY - (290 * scale);
@@ -633,6 +644,7 @@
             ctx.closePath();
             ctx.fill();
 
+            // Oxygen Jet
             const jetGradient = ctx.createLinearGradient(0, lanceTipY, 0, metalSurfaceClamp + p_px * 0.45);
             jetGradient.addColorStop(0, 'rgba(88, 166, 255, 0.38)');
             jetGradient.addColorStop(1, 'rgba(255, 220, 150, 0.20)');
@@ -645,6 +657,7 @@
             ctx.closePath();
             ctx.fill();
 
+            // Ambient Internal Heat Effects
             ctx.save();
             for (let i = 0; i < 2; i++) {
                 const wx = centerX + (i === 0 ? -0.35 : 0.35) * topHalf;
