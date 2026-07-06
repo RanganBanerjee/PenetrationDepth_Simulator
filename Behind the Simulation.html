@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Behind the Simulation - BOF Jet Penetration</title>
+    <style>
+        :root {
+            --bg-dark: #090c10;
+            --panel-bg: #12161d;
+            --panel-soft: #0d1117;
+            --text-main: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #ff7b72;
+            --accent-blue: #58a6ff;
+            --accent-glow: rgba(88, 166, 255, 0.15);
+            --border: #30363d;
+            --steel: #4b5563;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(180deg, var(--bg-dark) 0%, #0d1117 100%);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* 2% Blueprint Engineering Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.02;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(255,255,255,1) 1px, transparent 1px),
+                radial-gradient(circle at 85% 30%, rgba(255,255,255,1) 1px, transparent 1px),
+                linear-gradient(rgba(255,255,255,1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px);
+            background-size: 150px 150px, 150px 150px, 40px 40px, 40px 40px;
+        }
+
+        .container {
+            width: 93%;
+            max-width: 1400px; /* Constrained slightly for better text line-length readability */
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            padding: 40px 0 80px 0;
+        }
+
+        /* Top & Bottom Navigation */
+        .nav-bar {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 50px;
+        }
+
+        .bottom-nav-bar {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 60px;
+            margin-bottom: 50px;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(145deg, #1f2630, #161b22);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14.5px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .nav-btn svg {
+            margin-right: 10px;
+            fill: currentColor;
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: linear-gradient(145deg, #242c38, #1a2029);
+            border-color: rgba(88, 166, 255, 0.6);
+            color: var(--accent-blue);
+            transform: translateX(-3px);
+            box-shadow: 0 6px 20px var(--accent-glow);
+        }
+
+        /* Header Section */
+        header {
+            margin-bottom: 60px;
+            text-align: left;
+        }
+
+        header h1 {
+            margin: 0 0 20px 0;
+            font-size: 42px;
+            color: #ffffff;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            border-bottom: 2px solid rgba(88, 166, 255, 0.3);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+
+        .intro-text {
+            font-size: 16px;
+            line-height: 1.75;
+            color: var(--text-muted);
+            max-width: 900px;
+            margin-bottom: 40px;
+        }
+
+        /* Name Cards */
+        .name-cards-container {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .name-card {
+            background: linear-gradient(145deg, rgba(30, 36, 45, 0.6), rgba(18, 23, 30, 0.6));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px 28px;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .name-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        .name-card .role {
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 8px;
+        }
+
+        .name-card .name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+        }
+
+        /* Accordion Structure */
+        .accordion-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 60px;
+        }
+
+        .acc-item {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+        }
+
+        .acc-item:hover {
+            border-color: rgba(88, 166, 255, 0.4);
+            background: linear-gradient(180deg, #181d24, #12161d);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .acc-item.active {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 25px var(--accent-glow), 0 8px 25px rgba(0,0,0,0.4);
+            background: linear-gradient(180deg, #161b24, #10141a);
+            transform: translateY(-2px);
+        }
+
+        .acc-header {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            color: var(--text-main);
+            font-size: 17px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            text-align: left;
+            transition: color 0.3s ease;
+        }
+
+        .acc-number {
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-right: 20px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 16px;
+            letter-spacing: 1px;
+            min-width: 28px;
+            transition: color 0.3s ease;
+        }
+
+        .acc-title {
+            flex-grow: 1;
+            letter-spacing: 0.3px;
+        }
+
+        .acc-item.active .acc-header,
+        .acc-item.active .acc-number {
+            color: var(--accent-blue);
+        }
+
+        .acc-content {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+        }
+
+        .acc-item.active .acc-content {
+            opacity: 1;
+        }
+
+        .acc-inner {
+            padding: 0 28px 30px 72px;
+            font-size: 15px;
+            line-height: 1.75;
+            color: var(--text-main);
+        }
+
+        .acc-inner p {
+            margin-top: 0;
+            margin-bottom: 18px;
+            color: #b0b8c1;
+        }
+        
+        .acc-inner p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* --- UI Improvements for Engineering Content --- */
+        
+        .section-subtitle {
+            color: #ffffff;
+            font-size: 19px;
+            font-weight: 700;
+            margin: 35px 0 18px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+            letter-spacing: 0.3px;
+        }
+        
+        .section-subtitle:first-child {
+            margin-top: 0;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(88, 166, 255, 0.08), rgba(88, 166, 255, 0.02));
+            border: 1px solid rgba(88, 166, 255, 0.15);
+            border-left: 5px solid var(--accent-blue);
+            padding: 20px 24px;
+            border-radius: 8px;
+            margin: 24px 0;
+            color: var(--text-main);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .highlight-box:hover {
+            transform: translateY(-2px);
+            border-color: rgba(88, 166, 255, 0.3);
+        }
+        
+        .highlight-title {
+            color: var(--accent-blue);
+            font-weight: 800;
+            font-size: 12.5px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+        }
+
+        .engineering-note {
+            background: linear-gradient(135deg, rgba(139, 148, 158, 0.08), rgba(139, 148, 158, 0.02));
+            border: 1px solid rgba(139, 148, 158, 0.2);
+            border-left: 4px solid var(--text-muted);
+            padding: 20px 24px;
+            border-radius: 8px;
+            font-style: normal;
+            margin: 24px 0;
+            color: #b0b8c1;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .engineering-note:hover {
+            transform: translateY(-2px);
+            border-color: rgba(139, 148, 158, 0.4);
+        }
+
+        .parameter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .parameter-card {
+            background: linear-gradient(145deg, rgba(26, 32, 41, 0.6), rgba(18, 23, 30, 0.6));
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .parameter-card:hover {
+            border-color: rgba(88, 166, 255, 0.3);
+            background: linear-gradient(145deg, rgba(30, 36, 45, 0.8), rgba(20, 25, 33, 0.8));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .parameter-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .parameter-symbol {
+            background: rgba(88, 166, 255, 0.12);
+            border: 1px solid rgba(88, 166, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: 800;
+            color: var(--accent-blue);
+            font-size: 13.5px;
+            letter-spacing: 0.5px;
+        }
+
+        .parameter-card-desc {
+            color: #b0b8c1;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        .key-takeaway {
+            background: linear-gradient(135deg, rgba(255, 123, 114, 0.08), rgba(255, 123, 114, 0.02));
+            border: 1px solid rgba(255, 123, 114, 0.15);
+            border-left: 4px solid var(--accent);
+            padding: 14px 18px;
+            border-radius: 6px;
+            font-size: 13.5px;
+            color: #e6edf3;
+            margin-top: auto;
+        }
+
+        .key-takeaway-title {
+            color: var(--accent);
+            font-weight: 800;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
+        }
+
+        .workflow-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            margin: 35px 0;
+            padding: 30px;
+            background: rgba(255,255,255,0.01);
+            border-radius: 12px;
+            border: 1px dashed rgba(255,255,255,0.05);
+        }
+
+        .workflow-step {
+            background: linear-gradient(145deg, #1f2630, #161b22);
+            border: 1px solid var(--border);
+            padding: 14px 28px;
+            border-radius: 8px;
+            color: #ffffff;
+            min-width: 280px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 14.5px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+        
+        .workflow-step:hover {
+            border-color: var(--accent-blue);
+            transform: scale(1.02);
+        }
+
+        .workflow-arrow {
+            color: var(--accent-blue);
+            font-size: 22px;
+            line-height: 1;
+            font-weight: bold;
+            opacity: 0.8;
+        }
+
+        ul {
+            margin: 15px 0;
+            padding-left: 24px;
+            color: #b0b8c1;
+        }
+        
+        li {
+            margin-bottom: 10px;
+            line-height: 1.7;
+        }
+
+        strong, b {
+            color: #e6edf3;
+            font-weight: 700;
+        }
+
+        /* Developer Message Section */
+        .developer-message {
+            background: linear-gradient(145deg, rgba(26, 32, 41, 0.8), rgba(18, 23, 30, 0.8));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-left: 6px solid var(--accent-blue);
+            border-radius: 12px;
+            padding: 35px 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .developer-message:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.12);
+        }
+
+        .developer-message h2 {
+            margin: 0 0 18px 0;
+            font-size: 22px;
+            color: #ffffff;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .developer-message p {
+            margin: 0 0 15px 0;
+            font-size: 15px;
+            line-height: 1.8;
+            color: #b0b8c1;
+        }
+        
+        .developer-message p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Full Width Footer */
+        footer {
+            width: 100%;
+            background: linear-gradient(0deg, #090c10, #12161d);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-top: auto;
+        }
+
+        footer p {
+            margin: 5px 0;
+            font-size: 13.5px;
+            color: var(--text-muted);
+            letter-spacing: 0.3px;
+        }
+
+        .footer-highlight {
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 12px !important;
+            letter-spacing: 0.5px;
+        }
+
+        .linkedin-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.03);
+            padding: 10px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .linkedin-btn svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+
+        .linkedin-btn:hover {
+            color: var(--accent-blue);
+            background: rgba(88, 166, 255, 0.1);
+            border-color: rgba(88, 166, 255, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Top Navigation -->
+        <nav class="nav-bar">
+            <a href="index.html" class="nav-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                Return to Simulator
+            </a>
+        </nav>
+
+        <!-- Header & Intro -->
+        <header>
+            <h1>Behind the Simulation</h1>
+            <p class="intro-text">
+                This Web-based simulation was developed with a simple objective to make BOF oxygen jet penetration depth easier to understand, visualize, and apply.This project represents my effort to bridge the gap between by transforming theoritical engineering knowledge into an intutive, interactive, and dynamic tool. This model has continuously evolved through technical discussions, industrial observations, and constant guidance and encouragement of my mentor.  
+            </p>
+            <div class="name-cards-container">
+                <div class="name-card">
+                    <span class="role">Prepared By</span>
+                    <span class="name">Rangan Banerjee</span>
+                </div>
+                <div class="name-card">
+                    <span class="role">Mentor</span>
+                    <span class="name">Dr. Bitan Sarkar</span>
+                </div>
+            </div>
+            <!-- Space for future personalized introduction -->
+            <div id="personalized-intro"></div>
+        </header>
+
+        <!-- Main Engineering Content (Accordions) -->
+        <main class="accordion-container">
+
+            <div class="acc-item">
+                <button class="acc-header">
+                    <span class="acc-number">01.</span>
+                    <span class="acc-title">Project Background & Engineering Objective</span>
+                </button>
+                <div class="acc-content">
+                    <div class="acc-inner">
+                        <p>In Basic Oxygen Furnace (BOF) steelmaking, the interaction between the supersonic oxygen jet and the molten steel bath is the primary driver of metallurgical efficiency and reaction kinetics.</p>
+                        
+                        <p>The depth to which the oxygen jet penetrates the liquid bath directly dictates the rate of decarburization, slag formation, and overall bath mixing.</p>
+
+                        <p>If the penetration is too shallow, the jet fails to mix the bath effectively, leading to excessive iron oxidation (high FeO in the slag) and severe slopping. Conversely, if the penetration is too deep, the jet violently scours the furnace floor, resulting in accelerated refractory wear and a drastically reduced campaign life for the converter vessel.</p>
+
+                        <div class="highlight-box">
+                            <div class="highlight-title">Engineering Objective</div>
+                           The primary objective of this BOF Jet Penetration Depth Simulation is to provide process engineers and metallurgists with a dynamic, real-time visualization tool that mathematically estimates the physical impact cavity of the oxygen jet. By simulating how variations in lance height, oxygen flow rate, and nozzle geometry interact with scale-dependent BOF vessels, the tool allows users to safely optimize blowing profiles, maximize oxygen efficiency, and protect refractory lining.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="acc-item">
+                <button class="acc-header">
+                    <span class="acc-number">02.</span>
+                    <span class="acc-title">Mathematical Methodology</span>
+                </button>
+                <div class="acc-content">
+                    <div class="acc-inner">
+                        <p>The simulator calculates the physical jet cavity utilizing a empirical framework based on the established Masazumi and Segawa models.</p>
+
+                        <div class="workflow-diagram">
+                            <div class="workflow-step">Input Parameters (V_O2, h_L, n, θ, d)</div>
+                            <div class="workflow-arrow">↓</div>
+                            <div class="workflow-step">Nozzle Factor (Kn)</div>
+                            <div class="workflow-arrow">↓</div>
+                            <div class="workflow-step">Auxiliary Variable (A1)</div>
+                            <div class="workflow-arrow">↓</div>
+                            <div class="workflow-step">Penetration Depth (L)</div>
+                            <div class="workflow-arrow">↓</div>
+                            <div class="workflow-step">Penetration Index (L / L0)</div>
+                            <div class="workflow-arrow">↓</div>
+                            <div class="workflow-step">Blowing Zone classification</div>
+                        </div>
+
+                        <div class="engineering-note">
+                            The complete mathematical derivations, regression constants, and governing equations are available in the technical report.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="acc-item" id="section03">
+                <button class="acc-header">
+                    <span class="acc-number">03.</span>
+                    <span class="acc-title">Parameters Used in the Model</span>
+                </button>
+                <div class="acc-content">
+                    <div class="acc-inner">
+                        <h3 class="section-subtitle">I. Oxygen Lance Design & Process Parameters</h3>
+                        <p>The behavior of the oxygen jet is governed by static geometric design parameters made during lance manufacturing and dynamic process adjustments made by the operator.</p>
+                        
+                        <div class="parameter-grid">
+                            <div class="parameter-card">
+                                <div class="parameter-title">Oxygen Flow Rate <span class="parameter-symbol">VO₂</span></div>
+                                <div class="parameter-card-desc">
+                                    This is the driving force of oxygen jet. More oxygen delivered per unit time increases the kinetic energy of the supersonic jet, resulting in deeper penetration into the liquid bath.
+                                </div>
+                                <div class="key-takeaway">
+                                    <div class="key-takeaway-title">Key Observation</div>
+                                    Increasing Oxygen Flow Rate (<b>VO₂</b>) generally increases jet penetration depth.
+                                </div>
+                            </div>
+
+                            <div class="parameter-card">
+                                <div class="parameter-title">Lance Height <span class="parameter-symbol">hL</span></div>
+                                <div class="parameter-card-desc">
+                                    The most important operating parameter, lance height determines the distance between the nozzle exit and the liquid bath surface. This directly affects the jet's momentum transfer and the degree of ambient gas entrainment and velocity decay.
+                                </div>
+                                <div class="key-takeaway">
+                                    <div class="key-takeaway-title">Key Observation</div>
+                                    Higher lance allows entrainment of ambient gas, resulting in a wider, shallower cavity.
+                                </div>
+                            </div>
+
+                            <div class="parameter-card">
+                                <div class="parameter-title">Number of Nozzles <span class="parameter-symbol">n</span></div>
+                                <div class="parameter-card-desc">
+                                    The total oxygen flow is divided among individual nozzles. This controls how the jet momentum is distributed across the bath surface.
+                                </div>
+                                <div class="key-takeaway">
+                                    <div class="key-takeaway-title">Key Observation</div>
+                                    More nozzles reduce the momentum per nozzle, resulting in a shallower penetration cavity.
+                                </div>
+                            </div>
+
+                            <div class="parameter-card">
+                                <div class="parameter-title">Nozzle Angle <span class="parameter-symbol">θ</span></div>
+                                <div class="parameter-card-desc">
+                                    The inclination angle of the nozzles off the vertical axis determines the radial spread of the oxygen jets.
+                                </div>
+                                <div class="key-takeaway">
+                                    <div class="key-takeaway-title">Key Observation</div>
+                                    A larger angle pushes jets toward the vessel walls, slightly reducing downward vertical momentum.
+                                </div>
+                            </div>
+
+                            <div class="parameter-card">
+                                <div class="parameter-title">Nozzle Diameter <span class="parameter-symbol">d</span></div>
+                                <div class="parameter-card-desc">
+                                    The throat diameter of the copper nozzle dictates gas expansion and absolute exit velocity.
+                                </div>
+                                <div class="key-takeaway">
+                                    <div class="key-takeaway-title">Key Observation</div>
+                                    Wider exit diameter diffuses the jet momentum, flattening the impact cavity.
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 class="section-subtitle">II. BOF Vessel Geometry & Heat Size Parameters</h3>
+                        <p>The vessel parameters dictate the physical environment and liquid bath depth that the jet interacts with.</p>
+                        
+                        <div class="highlight-box" style="background: linear-gradient(145deg, #1e242d, #141920); border-left-color: var(--text-muted); margin-bottom: 30px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);">
+                            <div style="font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: 15.5px; color: #fff; text-align: center; margin-bottom: 12px; letter-spacing: 0.5px;">
+                                Total Refractory Lining = Safety Lining (15%) + Working Lining (85%)
+                            </div>
+                            <p style="text-align: center; margin: 0; font-size: 14.5px; color: var(--text-muted); line-height: 1.6;">
+                                The <b>Refractory Lining</b> determines the effective internal BOF cavity. This establishes the <b>Static Bath Height (L₀)</b>, which is the critical denominator used to calculate the <b>Penetration Index (PI)</b>.
+                            </p>
+                        </div>
+
+                        <div class="highlight-box">
+                            <div class="highlight-title">Important Geometric Relation</div>
+                            Modifying the <b>Heat Size</b> changes the vessel geometry, wall thickness, and static liquid bath depth, which directly affects the <b>Penetration Index (PI)</b> and the region of the blowing zone. The vessel heat size is interpolated from historical BOF vessel design data used in the industry.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="acc-item">
+                <button class="acc-header">
+                    <span class="acc-number">04.</span>
+                    <span class="acc-title">Future Scope & Engineering Vision</span>
+                </button>
+                <div class="acc-content">
+                    <div class="acc-inner">
+                        <p>While the current mathematical model provides highly accurate estimations of pure jet-to-metal momentum transfer, future updates are planned to incorporate broader multi-phase metallurgical phenomena.</p>
+                        
+                        <p>Planned physics and operational upgrades include:</p>
+                        <ul>
+                            <li><b>Dynamic lance movement tracking.</b></li>
+                            <li><b>Slag layer and emulsion height modelling.</b></li>
+                            <li><b>Bottom gas stirring and upward buoyancy integration.</b></li>
+                            <li><b>Simplified heat transfer and reaction kinetics mapping.</b></li>
+                            <li><b>Predictive refractory wear profiling.</b></li>
+                        </ul>
+
+                        <h3 class="section-subtitle">Digital Twin & RAG Integration</h3>
+                        <p>The ultimate vision for this tool is to evolve it into a fully integrated Digital Twin with <b>Retrieval-Augmented Generation (RAG)</b> capabilities. Future versions will integrate an underlying engineering knowledge base built from BOF literature, textbooks, operating manuals, research papers, and industrial documentation.</p>
+                        
+                        <p>Rather than simply generating responses, the integrated assistant would retrieve validated engineering knowledge before providing recommendations. Potential capabilities include:</p>
+                        
+                        <div class="parameter-grid" style="gap: 15px;">
+                            <ul style="margin:0; background: rgba(255,255,255,0.02); padding: 20px 20px 20px 40px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                                <li>Explaining complex BOF process concepts.</li>
+                                <li>Interpreting anomalous simulation outputs.</li>
+                                <li>Suggesting optimum operating parameters.</li>
+                                <li>Oxygen requirement and blowing time estimation.</li>
+                                <li>Heat balance calculations.</li>
+                            </ul>
+                            <ul style="margin:0; background: rgba(255,255,255,0.02); padding: 20px 20px 20px 40px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                                <li>Lime and flux estimation based on input chemistry.</li>
+                                <li>Slag chemistry guidance.</li>
+                                <li>Dynamic, real-time operating recommendations.</li>
+                                <li>Engineering troubleshooting for process deviations.</li>
+                                <li>Reference-supported answers linked directly to manuals.</li>
+                            </ul>
+                        </div>
+
+                        <div class="highlight-box" style="margin-top: 30px;">
+                            <div class="highlight-title">Platform Evolution</div>
+                            This integration would transform the simulator from a standalone penetration depth calculator into an intelligent, AI-assisted engineering decision-support platform.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Message from the Developer -->
+        <section class="developer-message">
+            <h2>Closing Note</h2>
+            <p>
+                This project reflects how I approach engineering problems—not merely by finding an answer, but by going a step further to understand the mechanics behind it and presenting it in a way that is easy to visualize, understand, and explore. The true purpose of this project is not just the simulation itself, but the mindset of curiosity, continuous exploration, and the accurate representation of engineering knowledge.
+            </p>
+            <p>
+                This project represents my continuous effort to transform engineering concepts into intuitive, transparent, and practically useful digital tools for learning and industrial problem solving.
+            </p>
+        </section>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav-bar">
+            <a href="index.html" class="nav-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                Return to Simulator
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Full Width Footer -->
+    <footer>
+        <p class="footer-highlight">BOF Jet Penetration Depth Simulator</p>
+        <p>© 2026 Rangan Banerjee. All Rights Reserved.</p>
+        
+        <a href="https://www.linkedin.com/in/rangan-banerjee"
+           class="linkedin-btn"
+           target="_blank"
+           rel="noopener noreferrer"
+           aria-label="LinkedIn Profile">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+            </svg>
+        </a>
+    </footer>
+
+    <!-- Accordion JavaScript Logic -->
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const accItems = document.querySelectorAll('.acc-item');
+
+    function toggleAccordion(item){
+
+        const content = item.querySelector('.acc-content');
+
+        const isActive = item.classList.contains('active');
+
+        // Close every accordion
+        accItems.forEach(i => {
+
+            i.classList.remove('active');
+            i.querySelector('.acc-content').style.maxHeight = '0px';
+
+        });
+
+        // Open the clicked accordion
+        if(!isActive){
+
+            item.classList.add('active');
+            content.style.maxHeight = content.scrollHeight + 'px';
+
+        }
+
+    }
+
+    // Click Events
+    accItems.forEach(item => {
+
+        const header = item.querySelector('.acc-header');
+
+        header.addEventListener('click', () => {
+
+            toggleAccordion(item);
+
+        });
+
+    });
+
+    // Open section only when URL contains a hash
+    const hash = window.location.hash;
+
+    if(hash){
+
+        const target = document.querySelector(hash);
+
+        if(target){
+
+            target.classList.add('active');
+
+            const content = target.querySelector('.acc-content');
+
+            content.style.maxHeight = content.scrollHeight + 'px';
+
+            setTimeout(() => {
+
+                target.scrollIntoView({
+
+                    behavior:'smooth',
+
+                    block:'start'
+
+                });
+
+            },100);
+
+        }
+
+    }
+
+});
+</script>
+</body>
+</html>
