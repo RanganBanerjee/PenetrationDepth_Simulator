@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dynamic BOF Jet Penetration Simulator</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         :root {
             --bg-dark: #0d1117;
@@ -34,7 +36,7 @@
                 linear-gradient(180deg, #0b0f14 0%, var(--bg-dark) 100%);
             color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 5px 20px;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -42,11 +44,11 @@
 
         header {
             border-bottom: 1px solid var(--border);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
+            align-items: center;
             gap: 20px;
         }
 
@@ -54,8 +56,8 @@
             margin: 0;
             font-size: 26px;
             color: #ffffff;
-            font-weight: 600;
-            letter-spacing: 0.3px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
         }
 
         header p {
@@ -75,7 +77,7 @@
         .controls-column {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 1px;
             overflow-y: auto;
             padding-right: 5px;
         }
@@ -84,7 +86,7 @@
             background: linear-gradient(180deg, rgba(22,27,34,0.98), rgba(13,17,23,0.98));
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             box-shadow: 0 10px 30px rgba(0,0,0,0.22);
@@ -95,15 +97,65 @@
         }
 
         .panel-title {
+            
             margin-top: 0;
-            margin-bottom: 18px;
+            margin-bottom: 15px;
             font-size: 16px;
             color: #fff;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
+            padding-bottom: 5px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+        .info-title{
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+}
+
+.info-link{
+
+        display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    color:#9ca3af;
+
+    text-decoration:none;
+
+    transition:all .25s ease;
+
+}
+
+.info-link:hover{
+ color:#ffae57;
+
+    border-color:#ffae57;
+
+    background:rgba(255,174,87,.08);
+
+    transform:translateY(-2px) scale(1.10);
+
+    box-shadow:0 0 10px rgba(255,174,87,.30);
+
+}
+
+.info-link i{
+
+    font-size:11px;
+
+    transition:transform .25s ease;
+
+}
+.info-link:hover i{
+
+    transform:rotate(15deg);
+
+}
 
         .control-group {
             margin-bottom: 16px;
@@ -154,7 +206,7 @@
             background-color: #0d1117;
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 20px 15px;
+            padding: 14px 15px;
             text-align: center;
             flex-grow: 1;
             display: flex;
@@ -165,8 +217,37 @@
         .zone-label {
             font-size: 18px;
             font-weight: 600;
-            margin-top: 15px;
+            margin-top: 12px;
         }
+        #zone-tooltip{
+
+    position:absolute;
+
+    padding:8px 12px;
+
+    background:#1b2129;
+
+    color:#ffffff;
+
+    border:1px solid #4FA3F7;
+
+    border-radius:8px;
+
+    font-size:12px;
+
+    line-height:1.4;
+
+    pointer-events:none;
+
+    opacity:0;
+
+    transition:opacity .18s ease;
+
+    box-shadow:0 6px 20px rgba(0,0,0,.35);
+
+    z-index:999;
+
+}
 
         .canvas-container {
             flex-grow: 1;
@@ -195,12 +276,91 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Hover Tooltip Styles */
+        #bof-tooltip {
+            position: absolute;
+            background: linear-gradient(180deg, rgba(22,27,34,0.98), rgba(13,17,23,0.98));
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease-in-out;
+            z-index: 1000;
+            font-family: inherit;
+            font-size: 13px;
+            line-height: 1.4;
+            text-align: center;
+        }
+        .behind-link{
+
+            position:absolute;
+
+            right:16px;
+
+            bottom:14px;
+
+            display:flex;
+
+            align-items:center;
+
+            gap:7px;
+
+            color:#c9d1d9;
+
+            text-decoration:none;
+
+            font-size:13px;
+
+            font-weight:500;
+
+            opacity:0.9;
+
+            transition:all .2s ease;
+        }
+
+.behind-link i:first-child{
+
+    color:#58A6FF;
+
+    font-size:15px;
+}
+
+.behind-link i:last-child{
+
+    font-size:11px;
+
+    color:#8b949e;
+}
+
+.behind-link:hover{
+
+    color:#ffffff;
+
+    opacity:1;
+
+}
+
+.behind-link:hover i:first-child{
+
+    color:#7cc5ff;
+}
+
+.behind-link:hover i:last-child{
+
+    color:#58A6FF;
+
+    transform:translate(1px,-1px);
+}
     </style>
 </head>
 <body>
     <header>
         <div>
-            <h1>BOF Jet Penetration Simulator</h1>
+            <h1>BOF Jet Penetration Depth Simulator</h1>
         </div>
         <div style="text-align: right;">
             <p style="color: #fff; font-weight: 600; font-size: 14px;">Developed by Rangan Banerjee </p>
@@ -211,7 +371,19 @@
     <div class="dashboard">
         <div class="controls-column">
             <div class="panel">
-                <h2 class="panel-title" style="color: var(--accent-blue);">Lance Parameters</h2>
+                <h2 class="panel-title info-title" style="color: var(--accent-blue);">
+    Oxygen Lance Design & Process Parameters
+
+    <a href="Behind the Simulation.html#section03"
+       target="_blank"
+       class="info-link"
+       title="Learn more about these parameters">
+
+        <i class="fa-solid fa-circle-info"></i>
+
+    </a>
+
+</h2>
                 <div class="control-group">
                     <label><span>Oxygen Flow (V_O2)</span> <span id="val_VO2">857 Nm³/min</span></label>
                     <input type="range" id="inp_VO2" min="250" max="1200" step="5" value="500">
@@ -226,7 +398,7 @@
                 </div>
                 <div class="control-group">
                     <label><span>Angle (θ)</span> <span id="val_theta">14°</span></label>
-                    <input type="range" id="inp_theta" min="10" max="20" step="1" value="14">
+                    <input type="range" id="inp_theta" min="12" max="18" step="1" value="14">
                 </div>
                 <div class="control-group" style="margin-bottom: 0;">
                     <label><span> Nozzle Throat Diameter (d)</span> <span id="val_dE">40 mm</span></label>
@@ -235,7 +407,18 @@
             </div>
 
             <div class="panel">
-                <h2 class="panel-title" style="color: var(--accent);">BOF Vessel Parameters</h2>
+                <h2 class="panel-title info-title" style="color: var(--accent);">
+    Heat Size & BOF Vessel Geometry
+
+    <a href="Behind the Simulation.html#section03"
+       target="_blank"
+       class="info-link"
+       title="Learn more about BOF vessel parameters">
+
+        <i class="fa-solid fa-circle-info"></i>
+    </a>
+
+</h2>
                 <div class="control-group">
                     <label><span>Heat Size</span> <span id="val_heat">250 Tons</span></label>
                     <input type="range" id="inp_heat" min="130" max="350" step="10" value="250">
@@ -267,59 +450,89 @@
             </div>
             
             <div class="output-box"
-     style="display:flex;
-            justify-content:space-evenly;
-            align-items:center;
-            padding:12px 8px;">
+                 style="display:flex;
+                        justify-content:space-evenly;
+                        align-items:center;
+                        padding:12px 8px;">
 
-    <div style="text-align:center; flex:1;">
-        <span style="font-size:11px;">Bath Height (L₀)</span>
-        <h2 id="out_L0"
-            style="font-size:24px; margin-top:6px;">
-            0 mm
-        </h2>
-    </div>
+                <div style="text-align:center; flex:1;">
+                    <span style="font-size:11px;">Bath Height (L₀)</span>
+                    <h2 id="out_L0"
+                        style="font-size:24px; margin-top:6px;">
+                        0 mm
+                    </h2>
+                </div>
 
-    <div style="
-        width:1px;
-        height:48px;
-        background:#30363d;
-        opacity:0.8;">
-    </div>
+                <div style="
+                    width:1px;
+                    height:48px;
+                    background:#30363d;
+                    opacity:0.8;">
+                </div>
 
-    <div style="text-align:center; flex:1;">
-        <span style="font-size:11px;">Steel Height</span>
-        <h2 id="out_steel"
-            style="font-size:24px; margin-top:6px;">
-            0 mm
-        </h2>
-    </div>
-
-</div>
+                <div style="text-align:center; flex:1;">
+                    <span style="font-size:11px;">Steel Height</span>
+                    <h2 id="out_steel"
+                        style="font-size:24px; margin-top:6px;">
+                        0 mm
+                    </h2>
+                </div>
+            </div>
             
             <div class="output-box">
                 <span>Penetration Index (L / L₀)</span>
                 <h2 id="out_PI">0.00</h2>
             </div>
             <div id="d3-gauge">
-                <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Blowing Phenomena Zones</span>
+                <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Blowing Phenomena Zones</span>
                 <div id="gauge-svg-container"></div>
-                <div id="active-zone-label" class="zone-label">Soft Blow</div>
+                <div id="zone-tooltip"></div>
+                <div style="
+margin-top:14px;
+font-size:11px;
+color:#8b949e;
+letter-spacing:1px;
+text-transform:uppercase;">
+
+Current Zone
+
+</div>
+
+<div id="active-zone-label"
+class="zone-label">
+
+Soft Blow
+
+</div>
             </div>
         </div>
 
         <div class="panel panel-full">
             <h2 class="panel-title">BOF Cross-Section Visualization</h2>
             <div class="canvas-container">
-                <canvas id="bofCanvas"></canvas>
+                <a href="Behind the Simulation.html"
+                    class="behind-link">
+
+                    <i class="fa-regular fa-lightbulb"></i>
+
+                    <span>Behind the Simulation</span>
+
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+
+            </a><canvas id="bofCanvas"></canvas>
+
             </div>
         </div>
     </div>
+
+    <!-- Interactive Hover Tooltip -->
+    <div id="bof-tooltip"></div>
 
     <script>
         const inputs = ['VO2', 'hL', 'n', 'theta', 'dE', 'heat'];
         const values = {};
         let frameCount = 0;
+        window.activeRegions = {}; // Global object to hold geometric paths for hit testing
 
         const bubbles = [];
         for (let i = 0; i < 10; i++) {
@@ -390,7 +603,7 @@
             document.getElementById('val_heat').innerText = values.heat + ' Tons';
 
             const kn = -0.063 * values.theta + 1.7577;
-            const d_m = values.dE;
+            const d_m = values.dE; // Using standard meter conversion for calculation consistency
             const flowTerm = (kn * values.VO2 * 60) / (values.n * d_m);
             const M = 63.0 * Math.pow(flowTerm, 2 / 3);
             const L_raw = M * Math.exp((-0.78 * values.hL * 1000) / M);
@@ -407,36 +620,153 @@
 
         function drawD3Gauge(PI) {
             const container = d3.select("#gauge-svg-container");
+            const tooltip = d3.select("#zone-tooltip");
             container.selectAll("*").remove();
 
             const width = Math.max(260, document.getElementById('d3-gauge').clientWidth - 30);
-            const height = 70;
+            const height = 80;
             const margin = { top: 35, right: 10, bottom: 20, left: 10 };
 
             const svg = container.append("svg").attr("width", width).attr("height", height);
             const xScale = d3.scaleLinear().domain([0, 1.1]).range([margin.left, width - margin.right]);
+            // Scale Values
+[0.0,0.2,0.4,0.6,0.8,1.0].forEach(v => {
 
-            const zones = [
-                { limit: 0.40, color: "#3498db", name: "Soft Blow" },
-                { limit: 0.55, color: "#2ecc71", name: "Soft-Medium" },
-                { limit: 0.60, color: "#f1c40f", name: "Medium" },
-                { limit: 0.75, color: "#e67e22", name: "Medium-Hard" },
-                { limit: 1.10, color: "#e74c3c", name: "Hard Blow" }
-            ];
+    svg.append("text")
+        .attr("x", xScale(v))
+        .attr("y", margin.top + 40)
+        .attr("text-anchor","middle")
+        .attr("fill","#8b949e")
+        .style("font-size","12px")
+        .style("font-weight","500")
+        .text(v.toFixed(1));
+
+});
+           const zones = [
+
+{ limit:0.40,color:"#4FA3F7",name:"Soft Blow" },
+
+{ limit:0.55,color:"#45D483",name:"Soft-Medium" },
+
+{ limit:0.60,color:"#FFD84D",name:"Medium" },
+
+{ limit:0.75,color:"#FF9B42",name:"Medium-Hard" },
+
+{ limit:1.10,color:"#F05A5A",name:"Hard Blow" }
+
+];
 
             let previousLimit = 0;
             let activeZoneName = "";
             let activeColor = "";
 
             zones.forEach(zone => {
-                svg.append("rect")
+                const startRange = previousLimit;
+                const rect = svg.append("rect")
                     .attr("x", xScale(previousLimit))
                     .attr("y", margin.top)
                     .attr("width", Math.max(0, xScale(zone.limit) - xScale(previousLimit)))
-                    .attr("height", 20)
-                    .attr("fill", zone.color)
-                    .attr("opacity", 0.85)
-                    .attr("rx", 2);
+                    .attr("height",22)
+.attr("fill",zone.color)
+.attr("opacity",0.92)
+.attr("rx",4)
+.attr("ry",4);
+rect
+
+.on("mouseover", function(event){
+
+    d3.select(this)
+
+        .transition()
+
+        .duration(150)
+
+        .attr("height",26)
+
+        .attr("y",margin.top-2)
+
+        .attr("opacity",1);
+
+    tooltip
+
+tooltip
+
+    .style("opacity",1)
+
+    .style("background", zone.color)
+
+    .style("border-color", zone.color)
+
+    .style(
+    "color",
+    (zone.color === "#FFD84D") ? "#111111" : "#ffffff"
+)
+
+    .html(
+
+        "<div style='font-weight:700; margin-bottom:4px;'>"
+
+        + zone.name +
+
+        "</div>"
+
+        +
+
+        "<div style='font-size:11px;'>"
+
+        +
+
+        "PI Range : "
+
+        +
+
+        startRange.toFixed(2)
+
+        +
+
+        " – "
+
+        +
+
+        zone.limit.toFixed(2)
+
+        +
+
+        "</div>"
+
+    );
+
+})
+
+.on("mousemove", function(event){
+
+    tooltip
+
+        .style("left",(event.pageX+15)+"px")
+
+        .style("top",(event.pageY-15)+"px");
+
+})
+
+.on("mouseout", function(){
+
+    d3.select(this)
+
+        .transition()
+
+        .duration(150)
+
+        .attr("height",22)
+
+        .attr("y",margin.top)
+
+        .attr("opacity",0.92);
+
+    tooltip
+
+        .style("opacity",0);
+
+});
 
                 if (PI >= previousLimit && PI < zone.limit && activeZoneName === "") {
                     activeZoneName = zone.name;
@@ -451,18 +781,38 @@
             }
 
             const clampedPI = Math.min(PI, 1.1);
-            const symbolGenerator = d3.symbol().type(d3.symbolTriangle).size(110);
+           svg.append("line")
 
-            svg.append("path")
-                .attr("d", symbolGenerator)
-                .attr("transform",`translate(${xScale(clampedPI)}, ${margin.top - 8}) rotate(180)`)
-                .attr("fill", "#ffffff");
+    .attr("x1",xScale(clampedPI))
+
+    .attr("x2",xScale(clampedPI))
+
+    .attr("y1",margin.top-10)
+
+    .attr("y2",margin.top+22)
+
+    .attr("stroke","#ffffff")
+
+    .attr("stroke-width",2);
+    svg.append("circle")
+
+    .attr("cx",xScale(clampedPI))
+
+    .attr("cy",margin.top+11)
+
+    .attr("r",5)
+
+    .attr("fill","#ffffff")
+
+    .attr("stroke","#58A6FF")
+
+    .attr("stroke-width",2);
 
             svg.append("text")
                 .attr("x", xScale(clampedPI))
                 .attr("y", margin.top - 18)
                 .attr("text-anchor", "middle")
-                .attr("fill", "#ffffff")
+                .attr("fill","#58A6FF")
                 .style("font-size", "12px")
                 .style("font-weight", "bold")
                 .text(PI.toFixed(2));
@@ -522,28 +872,57 @@
             const throatFactor = values.dE / 40;
 
             const cavityWidth = Math.max(
-            24,
-            baseRadius *
-            throatFactor *
-            (1 + (values.n - 1) * 0.15)
+                24,
+                baseRadius * throatFactor * (1 + (values.n - 1) * 0.15)
             );
 
-            function addVesselPath(offset) {
+            function addVesselPath(offset, target = ctx) {
                 const tH = Math.max(0, topHalf - offset);
                 const brH = Math.max(0, barrelHalf - offset);
                 const btH = Math.max(0, bottomHalf - offset);
                 const bY = adjustedBottomY - offset;
 
-                ctx.moveTo(centerX - tH, topY);
-                ctx.lineTo(centerX - brH, coneBottomY);
-                ctx.lineTo(centerX - brH, barrelBottomY);
-                // Apply a smooth tangent-continuous Bézier sweep across bottom left and right knuckles
-                ctx.bezierCurveTo(centerX - brH, barrelBottomY + (bY - barrelBottomY) * 0.75, centerX - btH, bY, centerX, bY);
-                ctx.bezierCurveTo(centerX + btH, bY, centerX + brH, barrelBottomY + (bY - barrelBottomY) * 0.75, centerX + brH, barrelBottomY);
-                ctx.lineTo(centerX + brH, coneBottomY);
-                ctx.lineTo(centerX + tH, topY);
-                ctx.closePath();
+                target.moveTo(centerX - tH, topY);
+                target.lineTo(centerX - brH, coneBottomY);
+                target.lineTo(centerX - brH, barrelBottomY);
+                target.bezierCurveTo(centerX - brH, barrelBottomY + (bY - barrelBottomY) * 0.75, centerX - btH, bY, centerX, bY);
+                target.bezierCurveTo(centerX + btH, bY, centerX + brH, barrelBottomY + (bY - barrelBottomY) * 0.75, centerX + brH, barrelBottomY);
+                target.lineTo(centerX + brH, coneBottomY);
+                target.lineTo(centerX + tH, topY);
+                // target.closePath();
             }
+
+            // Register Geometric Paths for Tooltip Hit Detection
+            window.activeRegions.shellOuter = new Path2D();
+            addVesselPath(0, window.activeRegions.shellOuter);
+
+            window.activeRegions.safetyInner = new Path2D();
+            addVesselPath(refractoryThickness * 0.15, window.activeRegions.safetyInner);
+
+            window.activeRegions.workingInner = new Path2D();
+            addVesselPath(refractoryThickness, window.activeRegions.workingInner);
+
+            window.activeRegions.shellLineWidth = Math.max(2, 18 * scale);
+
+            window.activeRegions.metalTop = new Path2D();
+            window.activeRegions.metalTop.moveTo(0, innerBottomY + 60);
+            window.activeRegions.metalTop.lineTo(0, metalSurfaceClamp);
+            window.activeRegions.metalTop.lineTo(centerX - cavityWidth, metalSurfaceClamp);
+            window.activeRegions.metalTop.quadraticCurveTo(centerX, metalSurfaceClamp + p_px * 1.55, centerX + cavityWidth, metalSurfaceClamp);
+            window.activeRegions.metalTop.lineTo(w, metalSurfaceClamp);
+            window.activeRegions.metalTop.lineTo(w, innerBottomY + 60);
+            window.activeRegions.metalTop.closePath();
+
+            const lanceWidth = 480 * scale;
+            window.activeRegions.lance = new Path2D();
+            window.activeRegions.lance.rect(centerX - lanceWidth / 2, 0, lanceWidth, lanceTipY);
+
+            window.activeRegions.oxyJet = new Path2D();
+            window.activeRegions.oxyJet.moveTo(centerX - lanceWidth / 4, lanceTipY);
+            window.activeRegions.oxyJet.lineTo(centerX + lanceWidth / 4, lanceTipY);
+            window.activeRegions.oxyJet.lineTo(centerX + cavityWidth * 0.86, metalSurfaceClamp + p_px * 0.45);
+            window.activeRegions.oxyJet.lineTo(centerX - cavityWidth * 0.86, metalSurfaceClamp + p_px * 0.45);
+            window.activeRegions.oxyJet.closePath();
 
             // Background Glow
             ctx.save();
@@ -598,10 +977,18 @@
             addVesselPath(refractoryThickness);
             ctx.clip(); // Restricts drawing to ONLY the space inside the perfectly smooth refractory curve
 
-            const steelGradient = ctx.createLinearGradient(0, metalSurfaceClamp, 0, innerBottomY);
-            steelGradient.addColorStop(0, '#ffb35e');
-            steelGradient.addColorStop(0.35, '#e67e22');
-            steelGradient.addColorStop(1, '#9f430f');
+            const steelGradient = ctx.createLinearGradient(
+                0,
+                metalSurfaceClamp,
+                0,
+                innerBottomY
+            );
+
+            steelGradient.addColorStop(0.00, "#FFD27A");   // Bright hot surface
+            steelGradient.addColorStop(0.15, "#FFB347");
+            steelGradient.addColorStop(0.40, "#F57C00");
+            steelGradient.addColorStop(0.70, "#D35400");
+            steelGradient.addColorStop(1.00, "#6E2C00");   // Deep interior
             ctx.fillStyle = steelGradient;
 
             ctx.beginPath();
@@ -613,6 +1000,26 @@
             ctx.lineTo(w, innerBottomY + 60); 
             ctx.closePath();
             ctx.fill();
+            // Glowing steel surface
+            ctx.strokeStyle = "rgba(255,235,170,0.40)";
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+
+            ctx.moveTo(0, metalSurfaceClamp);
+
+            ctx.lineTo(centerX - cavityWidth, metalSurfaceClamp);
+
+            ctx.quadraticCurveTo(
+            centerX,
+            metalSurfaceClamp + p_px * 1.55,
+            centerX + cavityWidth,
+            metalSurfaceClamp
+        );
+
+ctx.lineTo(w, metalSurfaceClamp);
+
+ctx.stroke();
 
             // Impact Cavity Glow
             const glow = ctx.createRadialGradient(centerX, metalSurfaceClamp + p_px * 0.55, 10, centerX, metalSurfaceClamp + p_px * 0.55, Math.max(100, cavityWidth * 1.1));
@@ -626,7 +1033,6 @@
             ctx.restore(); 
 
             // Oxygen Lance
-            const lanceWidth = 480 * scale;
             const innerPipe = 190 * scale;
             const tipTop = lanceTipY - (290 * scale);
 
@@ -689,6 +1095,78 @@
         });
 
         window.addEventListener('resize', updateAll);
+
+        // Interactive Hover Tooltip Logic
+        const canvasEl = document.getElementById('bofCanvas');
+        const tooltipEl = document.getElementById('bof-tooltip');
+        let currentHover = null;
+
+        canvasEl.addEventListener('mousemove', (e) => {
+            if (!window.activeRegions.shellOuter) return;
+
+            const rect = canvasEl.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            
+            // Map CSS pixels to internal physical canvas pixels to correctly evaluate Path2D
+            const x_phys = (e.clientX - rect.left) * dpr;
+            const y_phys = (e.clientY - rect.top) * dpr;
+
+            const ctx = canvasEl.getContext('2d');
+            let hoveredRegion = null;
+
+            // Restoring the correct line width for hit testing the stroke
+            ctx.lineWidth = window.activeRegions.shellLineWidth;
+
+            // Z-Index logical mapping (top to bottom visual priority)
+            if (ctx.isPointInPath(window.activeRegions.lance, x_phys, y_phys)) {
+                hoveredRegion = 'lance';
+            } else if (ctx.isPointInPath(window.activeRegions.oxyJet, x_phys, y_phys)) {
+                hoveredRegion = 'jet';
+            } else if (ctx.isPointInPath(window.activeRegions.workingInner, x_phys, y_phys) && ctx.isPointInPath(window.activeRegions.metalTop, x_phys, y_phys)) {
+                hoveredRegion = 'metal';
+            } else if (ctx.isPointInStroke(window.activeRegions.shellOuter, x_phys, y_phys)) {
+                hoveredRegion = 'csi';
+            } else if (ctx.isPointInPath(window.activeRegions.safetyInner, x_phys, y_phys) && !ctx.isPointInPath(window.activeRegions.workingInner, x_phys, y_phys)) {
+                hoveredRegion = 'working';
+            } else if (ctx.isPointInPath(window.activeRegions.shellOuter, x_phys, y_phys) && !ctx.isPointInPath(window.activeRegions.safetyInner, x_phys, y_phys)) {
+                hoveredRegion = 'safety';
+            }
+
+            if (hoveredRegion) {
+                tooltipEl.style.opacity = 1;
+                tooltipEl.style.left = (e.pageX + 15) + 'px';
+                tooltipEl.style.top = (e.pageY + 15) + 'px';
+                
+                if (currentHover !== hoveredRegion) {
+                    currentHover = hoveredRegion;
+                    const refTotal = values.refractoryThickness || 0;
+                    const valSafety = Math.round(refTotal * 0.15);
+                    const valWorking = Math.round(refTotal * 0.85);
+
+                    if (hoveredRegion === 'csi') {
+                        tooltipEl.innerHTML = `<div style="font-weight:600;">Converter Steel Inside (CSI)</div>`;
+                    } else if (hoveredRegion === 'safety') {
+                        tooltipEl.innerHTML = `<div style="font-weight:600;margin-bottom:4px;">Safety Lining</div><div style="color:var(--text-muted);font-size:11px;">15% of Total Refractory Thickness</div><div style="font-size:12px; margin-top:4px;">Total = ${Math.round(refTotal)} mm</div><div style="font-size:12px; color:var(--accent-blue);">Safety Lining = ${valSafety} mm</div>`;
+                    } else if (hoveredRegion === 'working') {
+                        tooltipEl.innerHTML = `<div style="font-weight:600;margin-bottom:4px;">Working Lining</div><div style="color:var(--text-muted);font-size:11px;">85% of Total Refractory Thickness</div><div style="font-size:12px; margin-top:4px;">Total = ${Math.round(refTotal)} mm</div><div style="font-size:12px; color:var(--accent-blue);">Working Lining = ${valWorking} mm</div>`;
+                    } else if (hoveredRegion === 'metal') {
+                        tooltipEl.innerHTML = `<div style="font-weight:600;">Molten Steel</div>`;
+                    } else if (hoveredRegion === 'lance') {
+                        tooltipEl.innerHTML = `<div style="font-weight:600;">Lance</div>`;
+                    } else if (hoveredRegion === 'jet') {
+                        tooltipEl.innerHTML = `<div style="font-weight:600;">Oxygen Jet</div>`;
+                    }
+                }
+            } else {
+                tooltipEl.style.opacity = 0;
+                currentHover = null;
+            }
+        });
+
+        canvasEl.addEventListener('mouseleave', () => {
+            tooltipEl.style.opacity = 0;
+            currentHover = null;
+        });
 
         setInterval(() => {
             const results = calculateMasazumi();
