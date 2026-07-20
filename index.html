@@ -402,7 +402,7 @@
                 </div>
                 <div class="control-group" style="margin-bottom: 0;">
                     <label><span> Nozzle Throat Diameter (d)</span> <span id="val_dE">40 mm</span></label>
-                    <input type="range" id="inp_dE" min="30" max="45" step="1" value="40">
+                    <input type="range" id="inp_dE" min="25" max="45" step="1" value="40">
                 </div>
             </div>
 
@@ -456,7 +456,7 @@
                         padding:12px 8px;">
 
                 <div style="text-align:center; flex:1;">
-                    <span style="font-size:11px;">Bath Height (L₀)</span>
+                    <span style="font-size:11px;">Total Bath Height</span>
                     <h2 id="out_L0"
                         style="font-size:24px; margin-top:6px;">
                         0 mm
@@ -471,7 +471,7 @@
                 </div>
 
                 <div style="text-align:center; flex:1;">
-                    <span style="font-size:11px;">Steel Height</span>
+                    <span style="font-size:11px;">Steel Height (L<sub>0</sub>)</span>
                     <h2 id="out_steel"
                         style="font-size:24px; margin-top:6px;">
                         0 mm
@@ -480,7 +480,7 @@
             </div>
             
             <div class="output-box">
-                <span>Penetration Index (L / L₀)</span>
+                <span>Penetration Index (L / L<sub>0</sub>)</span>
                 <h2 id="out_PI">0.00</h2>
             </div>
             <div id="d3-gauge">
@@ -587,7 +587,7 @@ Soft Blow
 
             values.refractoryThickness = refractoryThicknessMM;
             values.metalBathHeight = metalBathHeight;
-            values.L0 = staticBathHeight;
+            values.L0 = metalBathHeight;
             
             const { topDia, barrelDia, bottomDia } = getHeatGeometry(heat);
             
@@ -602,7 +602,7 @@ Soft Blow
             document.getElementById('val_dE').innerText = values.dE + ' mm';
             document.getElementById('val_heat').innerText = values.heat + ' Tons';
 
-            const kn = -0.063 * values.theta + 1.7577;
+            const kn = 1.10 - ((values.theta - 12) * (0.05 / 6));
             const d_m = values.dE; // Using standard meter conversion for calculation consistency
             const flowTerm = (kn * values.VO2 * 60) / (values.n * d_m);
             const M = 63.0 * Math.pow(flowTerm, 2 / 3);
@@ -611,8 +611,11 @@ Soft Blow
             const PI = L / values.L0;
 
             document.getElementById('out_L').innerText = L.toFixed(0) + ' mm';
-            document.getElementById('out_L0').innerText = values.L0.toFixed(0) + ' mm';
-            document.getElementById('out_steel').innerText = values.metalBathHeight.toFixed(0) + ' mm';
+           document.getElementById('out_L0').innerText =
+staticBathHeight.toFixed(0) + ' mm';
+
+document.getElementById('out_steel').innerText =
+values.L0.toFixed(0) + ' mm';
             document.getElementById('out_PI').innerText = PI.toFixed(2);
             
             return { L, PI, L0: values.L0 };
